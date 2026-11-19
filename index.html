@@ -86,9 +86,14 @@
               </svg>
             </button>
           </div>
-          <button id="btnSearchPatient" class="action-btn btn-dark" type="button" onclick="searchPatientNow()">
-            Search Patient
-          </button>
+          <div class="row-2 search-btn-row">
+            <button id="btnSearchPatient" class="action-btn btn-dark" type="button" onclick="searchPatientNow()">
+              Search Patient
+            </button>
+            <button id="btnClearSearch" class="action-btn btn-secondary-soft" type="button" onclick="clearSearchNow()">
+              Clear
+            </button>
+          </div>
         </div>
       </aside>
       <main class="right-main">
@@ -267,7 +272,9 @@
       if (!box) return;
       var html = "";
       for (var i = 0; i < doctorsInfo.length; i++) {
-        html += '<span class="doc-badge">' + doctorsInfo[i] + "</span>";
+        var label = doctorsInfo[i];
+        var statusCls = label.indexOf("(On Duty)") !== -1 ? " doc-badge-duty" : " doc-badge-avail";
+        html += '<span class="doc-badge' + statusCls + '">' + label + "</span>";
       }
       box.innerHTML = html;
     }
@@ -374,9 +381,10 @@
       for (var i = 0; i < patientsData.length; i++) {
         if (patientsData[i].id === pid) {
           var p = patientsData[i];
+          var addrPart = p.address ? " | Address: " + p.address : "";
           setOutput(
             "Selected Patient",
-            "ID " + p.id + " | " + p.name + " (" + p.age + "y) — " + p.disease + " | " + p.doctor
+            "ID " + p.id + " | " + p.name + " (" + p.age + "y)" + addrPart + " — " + p.disease + " | " + p.doctor
           );
           break;
         }
@@ -439,9 +447,10 @@
       document.getElementById("inpRate").value = "";
       document.getElementById("inpDisease").value = "";
       refreshAll();
+      var addrText = addressVal ? " | Address: " + addressVal : "";
       setOutput(
         "Add Patient",
-        "Added ID " + pid + " | Name: " + nameVal + " | Age: " + age + " | Disease: " + diseaseVal + " | " + docVal
+        "Added ID " + pid + " | Name: " + nameVal + " | Age: " + age + addrText + " | Disease: " + diseaseVal + " | " + docVal
       );
       sendPost("/api/add-patient", {
         id: pid,
@@ -516,9 +525,10 @@
       if (found) {
         highlightedId = found.id;
         renderPatientsTable();
+        var addrPart = found.address ? " | Address: " + found.address : "";
         setOutput(
           "Search Patient",
-          "Found -> ID " + found.id + " | " + found.name + " (" + found.age + "y) | " + found.disease + " | " + found.doctor
+          "Found -> ID " + found.id + " | " + found.name + " (" + found.age + "y)" + addrPart + " | " + found.disease + " | " + found.doctor
         );
       } else {
         highlightedId = null;
@@ -526,6 +536,12 @@
         setOutput("Search Patient", "Patient with ID " + pid + " not found.");
       }
       sendPost("/api/search-patient", { id: pid });
+    }
+    function clearSearchNow() {
+      document.getElementById("inpSearchId").value = "";
+      highlightedId = null;
+      renderPatientsTable();
+      setOutput("Search Patient", "Cleared search filter and row highlight.");
     }
     function updateClock() {
       var el = document.getElementById("clockDisplay");

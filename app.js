@@ -65,7 +65,10 @@
     const docsBox = document.getElementById("doctorsListBox");
     const docs = appState.doctors && appState.doctors.length ? appState.doctors : DOCTORS_DATA;
     docsBox.innerHTML = docs
-      .map((d) => `<span class="doc-badge">${esc(d.name)} — ${esc(d.field)} (${esc(d.status)})</span>`)
+      .map((d) => {
+        const stCls = d.status === "On Duty" ? "doc-badge-duty" : "doc-badge-avail";
+        return `<span class="doc-badge ${stCls}">${esc(d.name)} — ${esc(d.field)} (${esc(d.status)})</span>`;
+      })
       .join("");
 
     const dl = document.getElementById("patientNameList");
@@ -129,7 +132,8 @@
           foundPatientId = pid;
           const p = appState.patients.find((item) => item.id === pid);
           if (p) {
-            appState.status = `Selected Patient: ID ${p.id} | ${p.name} (${p.age}y) — ${p.disease} | ${p.doctor} (${p.field || "General"})`;
+            const addrStr = p.address ? ` | Address: ${p.address}` : "";
+            appState.status = `Selected Patient: ID ${p.id} | ${p.name} (${p.age}y)${addrStr} — ${p.disease} | ${p.doctor} (${p.field || "General"})`;
           }
           renderAll();
         });
@@ -195,7 +199,8 @@
     }
     appState.kpis.totalPatients = appState.patients.length;
     foundPatientId = pid;
-    appState.status = `Add Patient: Added ID ${pid} | Name: ${name} | Age: ${age} | Disease: ${disease} | ${docName} (${docField})`;
+    const addrStr = address ? ` | Address: ${address}` : "";
+    appState.status = `Add Patient: Added ID ${pid} | Name: ${name} | Age: ${age}${addrStr} | Disease: ${disease} | ${docName} (${docField})`;
     document.getElementById("inpId").value = "";
     document.getElementById("inpName").value = "";
     document.getElementById("inpAge").value = "";
@@ -274,13 +279,21 @@
     const found = appState.patients.find((p) => p.id === pid);
     if (found) {
       foundPatientId = found.id;
-      appState.status = `Search Patient: Found -> ID ${found.id} | ${found.name} (${found.age}y) | ${found.disease} | ${found.doctor} (${found.field || "General"})`;
+      const addrStr = found.address ? ` | Address: ${found.address}` : "";
+      appState.status = `Search Patient: Found -> ID ${found.id} | ${found.name} (${found.age}y)${addrStr} | ${found.disease} | ${found.doctor} (${found.field || "General"})`;
     } else {
       foundPatientId = null;
       appState.status = `Search Patient: Patient with ID ${pid} not found.`;
     }
     renderAll();
     sendToServer("/api/search-patient", { id: pid });
+  }
+  function onClearSearchClick() {
+    const sInp = document.getElementById("inpSearchId");
+    if (sInp) sInp.value = "";
+    foundPatientId = null;
+    appState.status = "Search Patient: Cleared search filter and row highlight.";
+    renderAll();
   }
   function init() {
     document.getElementById("btnAddPatient")?.addEventListener("click", onAddPatientClick);
@@ -289,6 +302,7 @@
     document.getElementById("btnCallNextMain")?.addEventListener("click", onCallNextClick);
     document.getElementById("btnCancelAppt")?.addEventListener("click", onCancelApptClick);
     document.getElementById("btnSearchPatient")?.addEventListener("click", onSearchClick);
+    document.getElementById("btnClearSearch")?.addEventListener("click", onClearSearchClick);
     document.getElementById("btnSearchIcon")?.addEventListener("click", onSearchClick);
     const sInp = document.getElementById("inpSearchId");
     if (sInp) {
