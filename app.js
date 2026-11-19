@@ -14,7 +14,7 @@
       totalPatients: 0,
       waitingQueue: 0,
       activeAdmissions: 0,
-      availableDoctors: 5,
+      availableDoctors: 6,
     },
     doctors: DOCTORS_DATA,
     queue: [],
