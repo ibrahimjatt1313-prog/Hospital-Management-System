@@ -14,8 +14,8 @@
         <p class="subtext">Patients (Linked List) & Appointments (Queue) — Connected to backend.py</p>
       </div>
       <div class="header-meta">
-        <button id="btnThemeToggle" class="theme-toggle-btn" type="button" onclick="toggleThemeNow()" aria-label="Toggle Dark Theme">
-          Dark Theme
+        <button id="btnThemeToggle" class="theme-toggle-btn" type="button" onclick="toggleThemeNow()" aria-label="Switch Theme">
+          Theme: Current
         </button>
         <span class="badge-online">● Online</span>
         <div id="clockDisplay" class="clock-text"></div>
@@ -228,17 +228,30 @@
       "Dr. Ibrahim Ali — Neurology (On Duty)",
       "Dr. Bisma Iqbal — ENT & Dermatology (On Duty)"
     ];
+    var THEME_ORDER = ["current", "dark", "midnight"];
+    function getActiveThemeMode() {
+      if (document.body.classList.contains("midnight-theme")) return "midnight";
+      if (document.body.classList.contains("dark-theme")) return "dark";
+      return "current";
+    }
     function syncThemeButton() {
       var btn = document.getElementById("btnThemeToggle");
       if (!btn) return;
-      var isDark = document.body.classList.contains("dark-theme");
-      btn.textContent = isDark ? "Current Theme" : "Dark Theme";
+      var mode = getActiveThemeMode();
+      if (mode === "midnight") {
+        btn.textContent = "Theme: Blue + Black";
+      } else if (mode === "dark") {
+        btn.textContent = "Theme: Dark";
+      } else {
+        btn.textContent = "Theme: Current";
+      }
     }
     function applyTheme(mode) {
+      document.body.classList.remove("dark-theme", "midnight-theme");
       if (mode === "dark") {
         document.body.classList.add("dark-theme");
-      } else {
-        document.body.classList.remove("dark-theme");
+      } else if (mode === "midnight") {
+        document.body.classList.add("midnight-theme");
       }
       try {
         localStorage.setItem("hms_theme_mode", mode);
@@ -246,19 +259,22 @@
       syncThemeButton();
     }
     function toggleThemeNow() {
-      var nextMode = document.body.classList.contains("dark-theme") ? "current" : "dark";
+      var cur = getActiveThemeMode();
+      var nextIdx = (THEME_ORDER.indexOf(cur) + 1) % THEME_ORDER.length;
+      var nextMode = THEME_ORDER[nextIdx];
       applyTheme(nextMode);
-      setOutput(
-        "Theme",
-        nextMode === "dark"
-          ? "Switched to Dark emerald/teal theme."
-          : "Switched to Current emerald/teal theme."
-      );
+      if (nextMode === "midnight") {
+        setOutput("Theme", "Switched to Blue + Black theme.");
+      } else if (nextMode === "dark") {
+        setOutput("Theme", "Switched to Dark emerald/teal theme.");
+      } else {
+        setOutput("Theme", "Switched to Current emerald/teal theme.");
+      }
     }
     try {
       var savedTheme = localStorage.getItem("hms_theme_mode");
-      if (savedTheme === "dark") {
-        document.body.classList.add("dark-theme");
+      if (savedTheme === "dark" || savedTheme === "midnight") {
+        applyTheme(savedTheme);
       }
     } catch (e) {}
     function setOutput(title, text) {
