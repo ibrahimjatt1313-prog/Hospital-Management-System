@@ -1,0 +1,307 @@
+(function () {
+  let selectedQueueIdx = -1;
+  let foundPatientId = null;
+  const DOCTORS_DATA = [
+    { name: "Dr. Ibrahim Ashraf", field: "General Medicine", status: "Available" },
+    { name: "Dr. Shawal Nadeem", field: "Cardiology", status: "Available" },
+    { name: "Dr. Abubakar Naveed", field: "Orthopedics", status: "Available" },
+    { name: "Dr. Aibtasam Ali", field: "Pediatrics", status: "Available" },
+    { name: "Dr. Bisma Iqbal", field: "Neurology", status: "On Duty" },
+    { name: "Dr. Ibrahim Ali", field: "ENT & Dermatology", status: "Available" },
+  ];
+  const appState = {
+    kpis: {
+      totalPatients: 0,
+      waitingQueue: 0,
+      activeAdmissions: 0,
+      availableDoctors: 5,
+    },
+    doctors: DOCTORS_DATA,
+    queue: [],
+    patients: [],
+    status: "Call Next Patient: Ready. Add Patient, Book Appointment, or Search by ID.",
+  };
+  function esc(v) {
+    return String(v ?? "")
+      .replace(/&/g, "&")
+      .replace(/</g, "<")
+      .replace(/>/g, ">")
+      .replace(/"/g, """);
+  }
+  function updateClockDisplay() {
+    const now = new Date();
+    const d = now.toLocaleDateString("en-US", {
+      month: "long",
+      day: "2-digit",
+      year: "numeric",
+    });
+    const t =
+      now.toLocaleDateString("en-US", { weekday: "long" }) +
+      ", " +
+      now.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" });
+    const el = document.getElementById("clockDisplay");
+    if (el) el.innerHTML = `${d}<br>${t}`;
+  }
+  function getStatusPill(status) {
+    if (status === "Completed") return `<span class="pill-status pill-completed">Completed</span>`;
+    if (status === "Waiting") return `<span class="pill-status pill-waiting">Waiting</span>`;
+    return `<span class="pill-status pill-progress">In Progress</span>`;
+  }
+  function setOutputText(msg) {
+    const el = document.getElementById("outputMessage");
+    if (!el) return;
+    const i = msg.indexOf(":");
+    if (i !== -1) {
+      el.innerHTML = `<strong>${esc(msg.slice(0, i + 1))}</strong>${esc(msg.slice(i + 1))}`;
+    } else {
+      el.textContent = msg;
+    }
+  }
+  function renderAll() {
+    document.getElementById("statTotal").textContent = appState.kpis.totalPatients;
+    document.getElementById("statQueue").textContent = appState.kpis.waitingQueue;
+    document.getElementById("statAdmissions").textContent = appState.kpis.activeAdmissions;
+    document.getElementById("statDoctors").textContent = appState.kpis.availableDoctors;
+    const docsBox = document.getElementById("doctorsListBox");
+    const docs = appState.doctors && appState.doctors.length ? appState.doctors : DOCTORS_DATA;
+    docsBox.innerHTML = docs
+      .map((d) => `<span class="doc-badge">${esc(d.name)} — ${esc(d.field)} (${esc(d.status)})</span>`)
+      .join("");
+
+    const dl = document.getElementById("patientNameList");
+    if (dl) {
+      dl.innerHTML = appState.patients.map((p) => `<option value="${esc(p.name)}"></option>`).join("");
+    }
+    const qBox = document.getElementById("queueContainer");
+    if (!appState.queue.length) {
+      qBox.innerHTML = `<div class="queue-item"><span class="queue-meta">No appointments in queue</span></div>`;
+      selectedQueueIdx = -1;
+    } else {
+      if (selectedQueueIdx >= appState.queue.length) selectedQueueIdx = -1;
+      qBox.innerHTML = appState.queue
+        .map((item, idx) => {
+          const activeCls = idx === selectedQueueIdx ? "active-item" : "";
+          return `
+            <div class="queue-item ${activeCls}" data-qidx="${idx}">
+              <span>${esc(item.name)}</span>
+              <span class="queue-meta">${esc(item.wait)}</span>
+            </div>
+          `;
+        })
+        .join("");
+      qBox.querySelectorAll(".queue-item[data-qidx]").forEach((row) => {
+        row.addEventListener("click", () => {
+          selectedQueueIdx = Number(row.getAttribute("data-qidx"));
+          renderAll();
+        });
+      });
+    }
+    const tbody = document.getElementById("patientsBody");
+    if (!appState.patients.length) {
+      tbody.innerHTML = `
+        <tr>
+          <td colspan="7" style="text-align:center; color:#64748b; padding:22px;">
+            No patients added yet. Fill "1. Add Patient" and click Add Patient.
+          </td>
+        </tr>
+      `;
+    } else {
+      tbody.innerHTML = appState.patients
+        .map((p) => {
+          const hi = foundPatientId === p.id ? "found-row" : "";
+          const docCol = p.field ? `${p.doctor} (${p.field})` : p.doctor;
+          return `
+            <tr class="${hi}" data-pid="${p.id}">
+              <td>${esc(p.id)}</td>
+              <td>${esc(p.name)}</td>
+              <td>${esc(p.age)}</td>
+              <td>${esc(p.disease)}</td>
+              <td>${esc(docCol)}</td>
+              <td>${getStatusPill(p.status)}</td>
+              <td>${esc(p.prescription || "—")}</td>
+            </tr>
+          `;
+        })
+        .join("");
+      tbody.querySelectorAll("tr[data-pid]").forEach((tr) => {
+        tr.addEventListener("click", () => {
+          const pid = Number(tr.getAttribute("data-pid"));
+          foundPatientId = pid;
+          const p = appState.patients.find((item) => item.id === pid);
+          if (p) {
+            appState.status = `Selected Patient: ID ${p.id} | ${p.name} (${p.age}y) — ${p.disease} | ${p.doctor} (${p.field || "General"})`;
+          }
+          renderAll();
+        });
+      });
+    }
+    if (appState.status) {
+      setOutputText(appState.status);
+    }
+  }
+  function sendToServer(endpoint, payload) {
+    fetch(endpoint, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => {
+        if (!d) return;
+        if (d.kpis) appState.kpis = d.kpis;
+        if (Array.isArray(d.patients)) appState.patients = d.patients;
+        if (Array.isArray(d.queue)) appState.queue = d.queue;
+        if (Array.isArray(d.doctors) && d.doctors.length) appState.doctors = d.doctors;
+        if (d.status) appState.status = d.status;
+        renderAll();
+      })
+      .catch(() => {});
+  }
+  function onAddPatientClick() {
+    const rawId = document.getElementById("inpId").value.trim();
+    const name = document.getElementById("inpName").value.trim();
+    const rawAge = document.getElementById("inpAge").value.trim();
+    const rate = document.getElementById("inpRate").value.trim();
+    const disease = document.getElementById("inpDisease").value.trim();
+    const docChoice = document.getElementById("selDoctor").value;
+    if (!rawId || !name || !rawAge || !disease) {
+      appState.status = "Add Patient: Please fill Patient ID, Patient Name, Age, and Disease.";
+      renderAll();
+      return;
+    }
+    const pid = Number(rawId);
+    const age = Number(rawAge);
+    const splitDoc = docChoice.split(" (");
+    const docName = splitDoc[0] || "Dr. Savola";
+    const docField = splitDoc[1] ? splitDoc[1].replace(")", "") : "General Medicine";
+    const record = {
+      id: pid,
+      name,
+      age,
+      disease,
+      doctor: docName,
+      field: docField,
+      rate,
+      status: "In Progress",
+      prescription: `${docField} Care`,
+    };
+    const existing = appState.patients.findIndex((p) => p.id === pid);
+    if (existing >= 0) {
+      appState.patients[existing] = record;
+    } else {
+      appState.patients.push(record);
+      appState.kpis.activeAdmissions += 1;
+    }
+    appState.kpis.totalPatients = appState.patients.length;
+    foundPatientId = pid;
+    appState.status = `Add Patient: Added ID ${pid} | Name: ${name} | Age: ${age} | Disease: ${disease} | ${docName} (${docField})`;
+    document.getElementById("inpId").value = "";
+    document.getElementById("inpName").value = "";
+    document.getElementById("inpAge").value = "";
+    document.getElementById("inpRate").value = "";
+    document.getElementById("inpDisease").value = "";
+    renderAll();
+    sendToServer("/api/add-patient", { id: pid, name, age, rate, disease, doctor: docChoice });
+  }
+  function onBookApptClick() {
+    const input = document.getElementById("inpApptName");
+    const name = input.value.trim();
+    const docChoice = document.getElementById("selApptDoctor").value;
+    if (!name) {
+      appState.status = "Book Appt: Please type a patient name first.";
+      renderAll();
+      return;
+    }
+    appState.queue.push({ name, wait: "" });
+    appState.queue = appState.queue.map((item, idx) => ({
+      name: item.name,
+      wait: idx === 0 ? "Next Up" : `#${idx + 1} in line`,
+    }));
+    appState.kpis.waitingQueue = appState.queue.length;
+    appState.status = `Book Appt: Booked appointment for ${name} (${docChoice}) | Waiting Queue: ${appState.queue.length}`;
+    input.value = "";
+    renderAll();
+    sendToServer("/api/book-appointment", { name, doctor: docChoice });
+  }
+  function onCallNextClick() {
+    if (!appState.queue.length) {
+      appState.status = "Call Next Patient: No pending appointments in queue.";
+      renderAll();
+      return;
+    }
+    const nextItem = appState.queue.shift();
+    appState.queue = appState.queue.map((item, idx) => ({
+      name: item.name,
+      wait: idx === 0 ? "Next Up" : `#${idx + 1} in line`,
+    }));
+    appState.kpis.waitingQueue = appState.queue.length;
+
+    appState.patients.forEach((p) => {
+      if (p.name.toLowerCase() === nextItem.name.toLowerCase()) {
+        p.status = "Completed";
+      }
+    });
+    appState.status = `Call Next Patient: Now attending ${nextItem.name} | Remaining in queue: ${appState.queue.length}`;
+    renderAll();
+    sendToServer("/api/call-next", {});
+  }
+  function onCancelApptClick() {
+    if (selectedQueueIdx < 0 || selectedQueueIdx >= appState.queue.length) {
+      appState.status = "Cancel Appointment: Please click an appointment in the queue first.";
+      renderAll();
+      return;
+    }
+    const removed = appState.queue.splice(selectedQueueIdx, 1)[0];
+    selectedQueueIdx = -1;
+    appState.queue = appState.queue.map((item, idx) => ({
+      name: item.name,
+      wait: idx === 0 ? "Next Up" : `#${idx + 1} in line`,
+    }));
+    appState.kpis.waitingQueue = appState.queue.length;
+    appState.status = `Cancel Appointment: Cancelled appointment for ${removed.name}.`;
+    renderAll();
+    sendToServer("/api/cancel-appointment", { index: 0 });
+  }
+  function onSearchClick() {
+    const raw = document.getElementById("inpSearchId").value.trim();
+    if (!raw) {
+      appState.status = "Search Patient: Please enter a Patient ID.";
+      renderAll();
+      return;
+    }
+    const pid = Number(raw);
+    const found = appState.patients.find((p) => p.id === pid);
+    if (found) {
+      foundPatientId = found.id;
+      appState.status = `Search Patient: Found -> ID ${found.id} | ${found.name} (${found.age}y) | ${found.disease} | ${found.doctor} (${found.field || "General"})`;
+    } else {
+      foundPatientId = null;
+      appState.status = `Search Patient: Patient with ID ${pid} not found.`;
+    }
+    renderAll();
+    sendToServer("/api/search-patient", { id: pid });
+  }
+  function init() {
+    document.getElementById("btnAddPatient")?.addEventListener("click", onAddPatientClick);
+    document.getElementById("btnBookAppt")?.addEventListener("click", onBookApptClick);
+    document.getElementById("btnCallNextSide")?.addEventListener("click", onCallNextClick);
+    document.getElementById("btnCallNextMain")?.addEventListener("click", onCallNextClick);
+    document.getElementById("btnCancelAppt")?.addEventListener("click", onCancelApptClick);
+    document.getElementById("btnSearchPatient")?.addEventListener("click", onSearchClick);
+    document.getElementById("btnSearchIcon")?.addEventListener("click", onSearchClick);
+    const sInp = document.getElementById("inpSearchId");
+    if (sInp) {
+      sInp.addEventListener("keydown", (e) => {
+        if (e.key === "Enter") onSearchClick();
+      });
+    }
+    updateClockDisplay();
+    setInterval(updateClockDisplay, 30000);
+    renderAll();
+  }
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", init);
+  } else {
+    init();
+  }
+})();

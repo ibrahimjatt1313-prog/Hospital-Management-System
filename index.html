@@ -1,0 +1,479 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Hospital Management System</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div class="app-wrapper">
+    <header class="top-bar">
+      <div>
+        <h1>Hospital Management System</h1>
+        <p class="subtext">Patients (Linked List) & Appointments (Queue) — Connected to backend.py</p>
+      </div>
+      <div class="header-meta">
+        <span class="badge-online">● Online</span>
+        <div id="clockDisplay" class="clock-text"></div>
+      </div>
+    </header>
+    <div class="workspace-grid">
+      <aside class="left-sidebar">
+        <div class="panel-box">
+          <h2>1. Add Patient</h2>
+          <label for="inpId">Patient ID</label>
+          <input id="inpId" type="number" placeholder="Enter ID (e.g. 1)" />
+          <label for="inpName">Patient Name</label>
+          <input id="inpName" type="text" placeholder="Enter Patient Name" />
+          <div class="row-2">
+            <div>
+              <label for="inpAge">Age</label>
+              <input id="inpAge" type="number" placeholder="Age" />
+            </div>
+            <div>
+              <label for="inpRate">Rate</label>
+              <input id="inpRate" type="text" placeholder="Rate" />
+            </div>
+          </div>
+          <label for="inpDisease">Disease / Medical Field</label>
+          <input id="inpDisease" type="text" placeholder="e.g. Fever" />
+          <label for="selDoctor">Assign Doctor & Field</label>
+          <select id="selDoctor">
+            <option value="Dr. Ibrahim Ashraf — General Medicine">Dr. Ibrahim Ashraf — General Medicine</option>
+            <option value="Dr. Shawal Nadeem">Dr. Shawal Nadeem — Cardiology</option>
+            <option value="Dr. Abubakar Naveed — Orthopedics">Dr. Abubakar Naveed — Orthopedics</option>
+            <option value="Dr. Bisma Iqbal">Dr. Bisma Iqbal — Pediatrics</option>
+            <option value="Dr. Aibtasam Ali — Neurology">Dr. Aibtasam Ali — Neurology</option>
+            <option value="Dr. Ibrahim Ali — ENT & Dermatology">Dr. Ibrahim Ali — ENT & Dermatology</option>
+          </select>
+          <button id="btnAddPatient" class="action-btn btn-success" type="button" onclick="addPatientNow()">
+            Add Patient
+          </button>
+        </div>
+        <div class="panel-box appt-compact">
+          <h2>2. Appointment</h2>
+          <input id="inpApptName" list="patientNameList" type="text" placeholder="Patient or Type Name..." />
+          <datalist id="patientNameList"></datalist>
+          <select id="selApptDoctor" class="mt-6">
+            <option value="Dr. Ibrahim Ashraf — General Medicine">Dr. Ibrahim Ashraf — General Medicine</option>
+            <option value="Dr. Shawal Nadeem — Cardiology">Dr. Shawal Nadeem — Cardiology</option>
+            <option value="Dr. Abubakar Naveed — Orthopedics">Dr. Abubakar Naveed — Orthopedics</option>
+            <option value="Dr. Bisma Iqbal — Pediatrics">Dr. Bisma Iqbal — Pediatrics</option>
+            <option value="Dr. Aibtasam Ali — Neurology">Dr. Aibtasam Ali — Neurology</option>
+            <option value="Dr. Ibrahim Ali — ENT & Dermatology">Ibrahim Ali — ENT & Dermatology</option>
+          </select>
+          <div class="row-2 btn-row-compact">
+            <button id="btnBookAppt" class="action-btn btn-primary" type="button" onclick="bookApptNow()">
+              Book Appt
+            </button>
+            <button id="btnCallNextSide" class="action-btn btn-dark" type="button" onclick="callNextNow()">
+              Call Next
+            </button>
+          </div>
+        </div>
+        <div class="panel-box">
+          <h2>3. Search Patient</h2>
+          <div class="search-row">
+            <input id="inpSearchId" type="number" placeholder="Enter Patient ID" />
+            <button id="btnSearchIcon" class="search-icon-btn" type="button" title="Search" onclick="searchPatientNow()">🔍</button>
+          </div>
+          <button id="btnSearchPatient" class="action-btn btn-dark" type="button" onclick="searchPatientNow()">
+            Search Patient
+          </button>
+        </div>
+      </aside>
+      <main class="right-main">
+        <section class="stats-grid">
+          <div class="stat-card">
+            <div class="stat-icon">👥</div>
+            <div>
+              <div class="stat-label">Total Patients</div>
+              <div class="stat-value-wrap">
+                <span id="statTotal" class="stat-value">0</span>
+                <span class="stat-tag">+ +</span>
+              </div>
+            </div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon">🗓️</div>
+            <div>
+              <div class="stat-label">Waiting Queue</div>
+              <div class="stat-value-wrap">
+                <span id="statQueue" class="stat-value">0</span>
+              </div>
+            </div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon">🛏️</div>
+            <div>
+              <div class="stat-label">Active Admissions</div>
+              <div class="stat-value-wrap">
+                <span id="statAdmissions" class="stat-value">0</span>
+              </div>
+            </div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon">📋</div>
+            <div>
+              <div class="stat-label">Available Doctors</div>
+              <div class="stat-value-wrap">
+                <span id="statDoctors" class="stat-value">5</span>
+              </div>
+            </div>
+          </div>
+        </section>
+        <section class="doctors-panel">
+          <span class="doctors-heading">Doctors & Medical Fields:</span>
+          <div id="doctorsListBox" class="doctors-list"></div>
+        </section>
+        <section class="content-split">
+          <div class="card-panel queue-panel">
+            <div class="card-header-blue">
+              <h2>Appointments</h2>
+              <div class="header-line"></div>
+            </div>
+            <div class="queue-top-actions">
+              <span>Live FIFO Queue</span>
+              <button id="btnCallNextMain" class="action-btn btn-primary btn-compact" type="button" onclick="callNextNow()">
+                Call Next Patient
+              </button>
+            </div>
+            <div id="queueContainer" class="queue-container"></div>
+
+            <div class="queue-bottom-action">
+              <button id="btnCancelAppt" class="cancel-link" type="button" onclick="cancelApptNow()">
+                Cancel Selected Appointment
+              </button>
+            </div>
+          </div>
+          <div class="card-panel patients-panel">
+            <div class="card-header-blue">
+              <h2>All Patients</h2>
+            </div>
+            <div class="table-wrapper">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>ID</th>
+                    <th>Name</th>
+                    <th>Age</th>
+                    <th>Disease</th>
+                    <th>Doctor & Field</th>
+                    <th>Status</th>
+                    <th>Prescription</th>
+                  </tr>
+                </thead>
+                <tbody id="patientsBody"></tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+        <section class="output-panel">
+          <div class="output-header">Status / Output</div>
+          <div id="outputMessage" class="output-body">
+            <strong>Status / Output:</strong> Ready. Add Patient, Book Appointment, or Search by ID.
+          </div>
+        </section>
+      </main>
+    </div>
+  </div>
+  <script>
+    var patientsData = [];
+    var queueData = [];
+    var selectedQueueIdx = -1;
+    var highlightedId = null;
+    var doctorsInfo = [
+      "Dr. Ibrahim Ashraf — General Medicine (Available)",
+      "Dr. Shawal Nadeem — Cardiology (Available)",
+      "Dr. Abubakar Naveed — Orthopedics (On Duty)",
+      "Dr. Aibtasam Ali — Pediatrics (Available)",
+      "Dr. Ibrahim Ali — Neurology (On Duty)",
+      "Dr. Bisma Iqbal — ENT & Dermatology (Available)"
+    ];
+    function setOutput(title, text) {
+      var box = document.getElementById("outputMessage");
+      if (box) {
+        box.innerHTML = "<strong>" + title + ":</strong> " + text;
+      }
+    }
+    function renderDoctorsBar() {
+      var box = document.getElementById("doctorsListBox");
+      if (!box) return;
+      var html = "";
+      for (var i = 0; i < doctorsInfo.length; i++) {
+        html += '<span class="doc-badge">' + doctorsInfo[i] + "</span>";
+      }
+      box.innerHTML = html;
+    }
+    function renderStats() {
+      document.getElementById("statTotal").textContent = String(patientsData.length);
+      document.getElementById("statQueue").textContent = String(queueData.length);
+      document.getElementById("statAdmissions").textContent = String(patientsData.length);
+      document.getElementById("statDoctors").textContent = "5";
+    }
+    function renderPatientsTable() {
+      var tbody = document.getElementById("patientsBody");
+      var dl = document.getElementById("patientNameList");
+      if (!tbody) return;
+      if (dl) {
+        var opts = "";
+        for (var k = 0; k < patientsData.length; k++) {
+          opts += '<option value="' + patientsData[k].name + '"></option>';
+        }
+        dl.innerHTML = opts;
+      }
+      if (patientsData.length === 0) {
+        tbody.innerHTML =
+          '<tr><td colspan="7" style="text-align:center; color:#64748b; padding:20px;">No patients added yet.</td></tr>';
+        return;
+      }
+      var rows = "";
+      for (var i = 0; i < patientsData.length; i++) {
+        var p = patientsData[i];
+        var cls = highlightedId === p.id ? ' class="found-row"' : "";
+        var pillClass = p.status === "Completed" ? "pill-completed" : "pill-progress";
+        rows +=
+          "<tr" +
+          cls +
+          ' onclick="selectPatientRow(' +
+          p.id +
+          ')">' +
+          "<td>" +
+          p.id +
+          "</td>" +
+          "<td>" +
+          p.name +
+          "</td>" +
+          "<td>" +
+          p.age +
+          "</td>" +
+          "<td>" +
+          p.disease +
+          "</td>" +
+          "<td>" +
+          p.doctor +
+          "</td>" +
+          '<td><span class="pill-status ' +
+          pillClass +
+          '">' +
+          p.status +
+          "</span></td>" +
+          "<td>" +
+          p.prescription +
+          "</td>" +
+          "</tr>";
+      }
+      tbody.innerHTML = rows;
+    }
+    function renderQueueList() {
+      var qBox = document.getElementById("queueContainer");
+      if (!qBox) return;
+      if (queueData.length === 0) {
+        qBox.innerHTML =
+          '<div class="queue-item"><span class="queue-meta">No appointments in queue</span></div>';
+        selectedQueueIdx = -1;
+        return;
+      }
+      if (selectedQueueIdx >= queueData.length) {
+        selectedQueueIdx = -1;
+      }
+      var html = "";
+      for (var i = 0; i < queueData.length; i++) {
+        var waitText = i === 0 ? "Next Up" : "#" + (i + 1) + " in line";
+        var activeClass = i === selectedQueueIdx ? " active-item" : "";
+        html +=
+          '<div class="queue-item' +
+          activeClass +
+          '" onclick="selectQueueRow(' +
+          i +
+          ')">' +
+          "<span>" +
+          queueData[i].name +
+          "</span>" +
+          '<span class="queue-meta">' +
+          waitText +
+          "</span>" +
+          "</div>";
+      }
+      qBox.innerHTML = html;
+    }
+    function refreshAll() {
+      renderStats();
+      renderDoctorsBar();
+      renderPatientsTable();
+      renderQueueList();
+    }
+    function selectPatientRow(pid) {
+      highlightedId = pid;
+      for (var i = 0; i < patientsData.length; i++) {
+        if (patientsData[i].id === pid) {
+          var p = patientsData[i];
+          setOutput(
+            "Selected Patient",
+            "ID " + p.id + " | " + p.name + " (" + p.age + "y) — " + p.disease + " | " + p.doctor
+          );
+          break;
+        }
+      }
+      renderPatientsTable();
+    }
+    function selectQueueRow(idx) {
+      selectedQueueIdx = idx;
+      renderQueueList();
+    }
+    function sendPost(url, data) {
+      try {
+        fetch(url, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(data)
+        }).catch(function () {});
+      } catch (e) {}
+    }
+    function addPatientNow() {
+      var idVal = document.getElementById("inpId").value.trim();
+      var nameVal = document.getElementById("inpName").value.trim();
+      var ageVal = document.getElementById("inpAge").value.trim();
+      var rateVal = document.getElementById("inpRate").value.trim();
+      var diseaseVal = document.getElementById("inpDisease").value.trim();
+      var docVal = document.getElementById("selDoctor").value;
+      if (!idVal || !nameVal || !ageVal || !diseaseVal) {
+        setOutput("Add Patient", "Please enter Patient ID, Name, Age, and Disease.");
+        return;
+      }
+      var pid = parseInt(idVal, 10);
+      var age = parseInt(ageVal, 10);
+      var fieldName = docVal.indexOf("—") !== -1 ? docVal.split("—")[1].trim() : "General Medicine";
+      var record = {
+        id: pid,
+        name: nameVal,
+        age: age,
+        disease: diseaseVal,
+        doctor: docVal,
+        rate: rateVal,
+        status: "In Progress",
+        prescription: fieldName + " Care"
+      };
+      var replaced = false;
+      for (var i = 0; i < patientsData.length; i++) {
+        if (patientsData[i].id === pid) {
+          patientsData[i] = record;
+          replaced = true;
+          break;
+        }
+      }
+      if (!replaced) {
+        patientsData.push(record);
+      }
+      highlightedId = pid;
+      document.getElementById("inpId").value = "";
+      document.getElementById("inpName").value = "";
+      document.getElementById("inpAge").value = "";
+      document.getElementById("inpRate").value = "";
+      document.getElementById("inpDisease").value = "";
+      refreshAll();
+      setOutput(
+        "Add Patient",
+        "Added ID " + pid + " | Name: " + nameVal + " | Age: " + age + " | Disease: " + diseaseVal + " | " + docVal
+      );
+      sendPost("/api/add-patient", {
+        id: pid,
+        name: nameVal,
+        age: age,
+        rate: rateVal,
+        disease: diseaseVal,
+        doctor: docVal
+      });
+    }
+    function bookApptNow() {
+      var nameVal = document.getElementById("inpApptName").value.trim();
+      var docVal = document.getElementById("selApptDoctor").value;
+
+      if (!nameVal) {
+        setOutput("Book Appt", "Please type a patient name first.");
+        return;
+      }
+      queueData.push({ name: nameVal, doctor: docVal });
+      document.getElementById("inpApptName").value = "";
+      refreshAll();
+      setOutput(
+        "Book Appt",
+        "Booked appointment for " + nameVal + " (" + docVal + ") | Waiting Queue: " + queueData.length
+      );
+      sendPost("/api/book-appointment", { name: nameVal, doctor: docVal });
+    }
+    function callNextNow() {
+      if (queueData.length === 0) {
+        setOutput("Call Next Patient", "No pending appointments in queue.");
+        return;
+      }
+      var nextItem = queueData.shift();
+      for (var i = 0; i < patientsData.length; i++) {
+        if (patientsData[i].name.toLowerCase() === nextItem.name.toLowerCase()) {
+          patientsData[i].status = "Completed";
+        }
+      }
+      refreshAll();
+      setOutput(
+        "Call Next Patient",
+        "Now attending " + nextItem.name + " | Remaining in queue: " + queueData.length
+      );
+      sendPost("/api/call-next", {});
+    }
+    function cancelApptNow() {
+      if (selectedQueueIdx < 0 || selectedQueueIdx >= queueData.length) {
+        setOutput("Cancel Appointment", "Please click an appointment in Live FIFO Queue first.");
+        return;
+      }
+      var removed = queueData.splice(selectedQueueIdx, 1)[0];
+      selectedQueueIdx = -1;
+      refreshAll();
+      setOutput("Cancel Appointment", "Cancelled appointment for " + removed.name + ".");
+      sendPost("/api/cancel-appointment", { index: 0 });
+    }
+    function searchPatientNow() {
+      var rawId = document.getElementById("inpSearchId").value.trim();
+      if (!rawId) {
+        setOutput("Search Patient", "Please enter a Patient ID.");
+        return;
+      }
+      var pid = parseInt(rawId, 10);
+      var found = null;
+      for (var i = 0; i < patientsData.length; i++) {
+        if (patientsData[i].id === pid) {
+          found = patientsData[i];
+          break;
+        }
+      }
+      if (found) {
+        highlightedId = found.id;
+        renderPatientsTable();
+        setOutput(
+          "Search Patient",
+          "Found -> ID " + found.id + " | " + found.name + " (" + found.age + "y) | " + found.disease + " | " + found.doctor
+        );
+      } else {
+        highlightedId = null;
+        renderPatientsTable();
+        setOutput("Search Patient", "Patient with ID " + pid + " not found.");
+      }
+      sendPost("/api/search-patient", { id: pid });
+    }
+    function updateClock() {
+      var el = document.getElementById("clockDisplay");
+      if (!el) return;
+      var now = new Date();
+      el.innerHTML =
+        now.toLocaleDateString("en-US", { month: "long", day: "2-digit", year: "numeric" }) +
+        "<br>" +
+        now.toLocaleDateString("en-US", { weekday: "long" }) +
+        ", " +
+        now.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" });
+    }
+    updateClock();
+    setInterval(updateClock, 30000);
+    refreshAll();
+  </script>
+</body>
+</html>
