@@ -32,8 +32,8 @@
               <input id="inpAge" type="number" placeholder="Age" />
             </div>
             <div>
-              <label for="inpRate">Rate</label>
-              <input id="inpRate" type="text" placeholder="Rate" />
+              <label for="inpRate">Address</label>
+              <input id="inpRate" type="text" placeholder="Address" />
             </div>
           </div>
           <label for="inpDisease">Disease / Medical Field</label>
@@ -147,7 +147,7 @@
             <div>
               <div class="stat-label">Available Doctors</div>
               <div class="stat-value-wrap">
-                <span id="statDoctors" class="stat-value">5</span>
+                <span id="statDoctors" class="stat-value">4</span>
               </div>
             </div>
           </div>
@@ -215,10 +215,10 @@
     var doctorsInfo = [
       "Dr. Ibrahim Ashraf — General Medicine (Available)",
       "Dr. Shawal Nadeem — Cardiology (Available)",
-      "Dr. Abubakar Naveed — Orthopedics (On Duty)",
+      "Dr. Abubakar Naveed — Orthopedics (Available)",
       "Dr. Aibtasam Ali — Pediatrics (Available)",
       "Dr. Ibrahim Ali — Neurology (On Duty)",
-      "Dr. Bisma Iqbal — ENT & Dermatology (Available)"
+      "Dr. Bisma Iqbal — ENT & Dermatology (On Duty)"
     ];
     function setOutput(title, text) {
       var box = document.getElementById("outputMessage");
@@ -239,7 +239,7 @@
       document.getElementById("statTotal").textContent = String(patientsData.length);
       document.getElementById("statQueue").textContent = String(queueData.length);
       document.getElementById("statAdmissions").textContent = String(patientsData.length);
-      document.getElementById("statDoctors").textContent = "5";
+      document.getElementById("statDoctors").textContent = "4";
     }
     function renderPatientsTable() {
       var tbody = document.getElementById("patientsBody");
@@ -364,7 +364,7 @@
       var idVal = document.getElementById("inpId").value.trim();
       var nameVal = document.getElementById("inpName").value.trim();
       var ageVal = document.getElementById("inpAge").value.trim();
-      var rateVal = document.getElementById("inpRate").value.trim();
+      var addressVal = document.getElementById("inpRate").value.trim();
       var diseaseVal = document.getElementById("inpDisease").value.trim();
       var docVal = document.getElementById("selDoctor").value;
       if (!idVal || !nameVal || !ageVal || !diseaseVal) {
@@ -380,7 +380,8 @@
         age: age,
         disease: diseaseVal,
         doctor: docVal,
-        rate: rateVal,
+        address: addressVal,
+        rate: addressVal,
         status: "In Progress",
         prescription: fieldName + " Care"
       };
@@ -410,7 +411,8 @@
         id: pid,
         name: nameVal,
         age: age,
-        rate: rateVal,
+        address: addressVal,
+        rate: addressVal,
         disease: diseaseVal,
         doctor: docVal
       });

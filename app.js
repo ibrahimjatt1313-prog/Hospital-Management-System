@@ -7,14 +7,14 @@
     { name: "Dr. Abubakar Naveed", field: "Orthopedics", status: "Available" },
     { name: "Dr. Aibtasam Ali", field: "Pediatrics", status: "Available" },
     { name: "Dr. Bisma Iqbal", field: "Neurology", status: "On Duty" },
-    { name: "Dr. Ibrahim Ali", field: "ENT & Dermatology", status: "Available" },
+    { name: "Dr. Ibrahim Ali", field: "ENT & Dermatology", status: "On Duty" },
   ];
   const appState = {
     kpis: {
       totalPatients: 0,
       waitingQueue: 0,
       activeAdmissions: 0,
-      availableDoctors: 6,
+      availableDoctors: 4,
     },
     doctors: DOCTORS_DATA,
     queue: [],
@@ -161,7 +161,7 @@
     const rawId = document.getElementById("inpId").value.trim();
     const name = document.getElementById("inpName").value.trim();
     const rawAge = document.getElementById("inpAge").value.trim();
-    const rate = document.getElementById("inpRate").value.trim();
+    const address = document.getElementById("inpRate").value.trim();
     const disease = document.getElementById("inpDisease").value.trim();
     const docChoice = document.getElementById("selDoctor").value;
     if (!rawId || !name || !rawAge || !disease) {
@@ -172,7 +172,7 @@
     const pid = Number(rawId);
     const age = Number(rawAge);
     const splitDoc = docChoice.split(" (");
-    const docName = splitDoc[0] || "Dr. Savola";
+    const docName = splitDoc[0] || "Dr. Ibrahim Ashraf";
     const docField = splitDoc[1] ? splitDoc[1].replace(")", "") : "General Medicine";
     const record = {
       id: pid,
@@ -181,7 +181,8 @@
       disease,
       doctor: docName,
       field: docField,
-      rate,
+      address,
+      rate: address,
       status: "In Progress",
       prescription: `${docField} Care`,
     };
@@ -201,7 +202,7 @@
     document.getElementById("inpRate").value = "";
     document.getElementById("inpDisease").value = "";
     renderAll();
-    sendToServer("/api/add-patient", { id: pid, name, age, rate, disease, doctor: docChoice });
+    sendToServer("/api/add-patient", { id: pid, name, age, address, rate: address, disease, doctor: docChoice });
   }
   function onBookApptClick() {
     const input = document.getElementById("inpApptName");
