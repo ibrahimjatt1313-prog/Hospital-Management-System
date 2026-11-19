@@ -76,7 +76,12 @@
           <h2>3. Search Patient</h2>
           <div class="search-row">
             <input id="inpSearchId" type="number" placeholder="Enter Patient ID" />
-            <button id="btnSearchIcon" class="search-icon-btn" type="button" title="Search" onclick="searchPatientNow()">🔍</button>
+            <button id="btnSearchIcon" class="search-icon-btn" type="button" title="Search" aria-label="Search" onclick="searchPatientNow()">
+              <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <circle cx="11" cy="11" r="8"></circle>
+                <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+              </svg>
+            </button>
           </div>
           <button id="btnSearchPatient" class="action-btn btn-dark" type="button" onclick="searchPatientNow()">
             Search Patient
@@ -86,17 +91,28 @@
       <main class="right-main">
         <section class="stats-grid">
           <div class="stat-card">
-            <div class="stat-icon">👥</div>
+            <div class="stat-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path>
+                <circle cx="9" cy="7" r="4"></circle>
+                <path d="M22 21v-2a4 4 0 0 0-3-3.87"></path>
+                <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+              </svg>
+            </div>
             <div>
               <div class="stat-label">Total Patients</div>
               <div class="stat-value-wrap">
                 <span id="statTotal" class="stat-value">0</span>
-                <span class="stat-tag">+ +</span>
               </div>
             </div>
           </div>
           <div class="stat-card">
-            <div class="stat-icon">🗓️</div>
+            <div class="stat-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="10"></circle>
+                <polyline points="12 6 12 12 16 14"></polyline>
+              </svg>
+            </div>
             <div>
               <div class="stat-label">Waiting Queue</div>
               <div class="stat-value-wrap">
@@ -105,7 +121,14 @@
             </div>
           </div>
           <div class="stat-card">
-            <div class="stat-icon">🛏️</div>
+            <div class="stat-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M2 4v16"></path>
+                <path d="M2 8h18a2 2 0 0 1 2 2v10"></path>
+                <path d="M2 17h20"></path>
+                <path d="M6 8v9"></path>
+              </svg>
+            </div>
             <div>
               <div class="stat-label">Active Admissions</div>
               <div class="stat-value-wrap">
@@ -114,7 +137,13 @@
             </div>
           </div>
           <div class="stat-card">
-            <div class="stat-icon">📋</div>
+            <div class="stat-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M4.8 2.3A.3.3 0 1 0 5 2H4a2 2 0 0 0-2 2v5a6 6 0 0 0 6 6v0a6 6 0 0 0 6-6V4a2 2 0 0 0-2-2h-1a.2.2 0 1 0 .3.3"></path>
+                <path d="M8 15v1a6 6 0 0 0 6 6v0a6 6 0 0 0 6-6v-4"></path>
+                <circle cx="20" cy="10" r="2"></circle>
+              </svg>
+            </div>
             <div>
               <div class="stat-label">Available Doctors</div>
               <div class="stat-value-wrap">
