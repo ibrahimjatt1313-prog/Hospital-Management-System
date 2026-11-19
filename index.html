@@ -384,7 +384,7 @@
           var addrPart = p.address ? " | Address: " + p.address : "";
           setOutput(
             "Selected Patient",
-            "ID " + p.id + " | " + p.name + " (" + p.age + "y)" + addrPart + " — " + p.disease + " | " + p.doctor
+            "Patient ID " + p.id + " | " + p.name + " (" + p.age + "y)" + addrPart + " — " + p.disease + " | " + p.doctor
           );
           break;
         }
@@ -450,7 +450,7 @@
       var addrText = addressVal ? " | Address: " + addressVal : "";
       setOutput(
         "Add Patient",
-        "Added ID " + pid + " | Name: " + nameVal + " | Age: " + age + addrText + " | Disease: " + diseaseVal + " | " + docVal
+        "Patient ID " + pid + " | Name: " + nameVal + " | Age: " + age + addrText + " | Disease: " + diseaseVal + " | " + docVal
       );
       sendPost("/api/add-patient", {
         id: pid,
@@ -528,7 +528,7 @@
         var addrPart = found.address ? " | Address: " + found.address : "";
         setOutput(
           "Search Patient",
-          "Found -> ID " + found.id + " | " + found.name + " (" + found.age + "y)" + addrPart + " | " + found.disease + " | " + found.doctor
+          "Found -> Patient ID " + found.id + " | " + found.name + " (" + found.age + "y)" + addrPart + " | " + found.disease + " | " + found.doctor
         );
       } else {
         highlightedId = null;

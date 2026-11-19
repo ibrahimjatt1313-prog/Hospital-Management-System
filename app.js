@@ -133,7 +133,7 @@
           const p = appState.patients.find((item) => item.id === pid);
           if (p) {
             const addrStr = p.address ? ` | Address: ${p.address}` : "";
-            appState.status = `Selected Patient: ID ${p.id} | ${p.name} (${p.age}y)${addrStr} — ${p.disease} | ${p.doctor} (${p.field || "General"})`;
+            appState.status = `Selected Patient: Patient ID ${p.id} | ${p.name} (${p.age}y)${addrStr} — ${p.disease} | ${p.doctor} (${p.field || "General"})`;
           }
           renderAll();
         });
@@ -200,7 +200,7 @@
     appState.kpis.totalPatients = appState.patients.length;
     foundPatientId = pid;
     const addrStr = address ? ` | Address: ${address}` : "";
-    appState.status = `Add Patient: Added ID ${pid} | Name: ${name} | Age: ${age}${addrStr} | Disease: ${disease} | ${docName} (${docField})`;
+    appState.status = `Add Patient: Patient ID ${pid} | Name: ${name} | Age: ${age}${addrStr} | Disease: ${disease} | ${docName} (${docField})`;
     document.getElementById("inpId").value = "";
     document.getElementById("inpName").value = "";
     document.getElementById("inpAge").value = "";
@@ -280,7 +280,7 @@
     if (found) {
       foundPatientId = found.id;
       const addrStr = found.address ? ` | Address: ${found.address}` : "";
-      appState.status = `Search Patient: Found -> ID ${found.id} | ${found.name} (${found.age}y)${addrStr} | ${found.disease} | ${found.doctor} (${found.field || "General"})`;
+      appState.status = `Search Patient: Found -> Patient ID ${found.id} | ${found.name} (${found.age}y)${addrStr} | ${found.disease} | ${found.doctor} (${found.field || "General"})`;
     } else {
       foundPatientId = null;
       appState.status = `Search Patient: Patient with ID ${pid} not found.`;
