@@ -14,6 +14,9 @@
         <p class="subtext">Patients (Linked List) & Appointments (Queue) — Connected to backend.py</p>
       </div>
       <div class="header-meta">
+        <button id="btnThemeToggle" class="theme-toggle-btn" type="button" onclick="toggleThemeNow()" aria-label="Toggle Dark Theme">
+          Dark Theme
+        </button>
         <span class="badge-online">● Online</span>
         <div id="clockDisplay" class="clock-text"></div>
       </div>
@@ -220,6 +223,39 @@
       "Dr. Ibrahim Ali — Neurology (On Duty)",
       "Dr. Bisma Iqbal — ENT & Dermatology (On Duty)"
     ];
+    function syncThemeButton() {
+      var btn = document.getElementById("btnThemeToggle");
+      if (!btn) return;
+      var isDark = document.body.classList.contains("dark-theme");
+      btn.textContent = isDark ? "Current Theme" : "Dark Theme";
+    }
+    function applyTheme(mode) {
+      if (mode === "dark") {
+        document.body.classList.add("dark-theme");
+      } else {
+        document.body.classList.remove("dark-theme");
+      }
+      try {
+        localStorage.setItem("hms_theme_mode", mode);
+      } catch (e) {}
+      syncThemeButton();
+    }
+    function toggleThemeNow() {
+      var nextMode = document.body.classList.contains("dark-theme") ? "current" : "dark";
+      applyTheme(nextMode);
+      setOutput(
+        "Theme",
+        nextMode === "dark"
+          ? "Switched to Dark emerald/teal theme."
+          : "Switched to Current emerald/teal theme."
+      );
+    }
+    try {
+      var savedTheme = localStorage.getItem("hms_theme_mode");
+      if (savedTheme === "dark") {
+        document.body.classList.add("dark-theme");
+      }
+    } catch (e) {}
     function setOutput(title, text) {
       var box = document.getElementById("outputMessage");
       if (box) {
@@ -502,6 +538,7 @@
         ", " +
         now.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" });
     }
+    syncThemeButton();
     updateClock();
     setInterval(updateClock, 30000);
     refreshAll();
