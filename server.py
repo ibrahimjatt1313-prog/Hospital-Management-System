@@ -1,6 +1,7 @@
 import json
 from http.server import ThreadingHTTPServer, SimpleHTTPRequestHandler
 from backend import HospitalSystem
+
 hs = HospitalSystem()
 patient_meta: dict[int, dict[str, str]] = {}
 active_admissions = 0
@@ -12,6 +13,8 @@ DOCTORS_DIRECTORY = [
     {"name": "Dr. Aibtasam Ali", "field": "Neurology", "status": "On Duty"},
     {"name": "Dr. Ibrahim Ali", "field": "ENT & Dermatology", "status": "Available"},
 ]
+
+
 def _collect_patients() -> list[dict]:
     items = []
     curr = getattr(hs, "head", None)
@@ -41,6 +44,8 @@ def _collect_patients() -> list[dict]:
         )
         curr = curr.next
     return items
+
+
 def _find_patient(pid: int):
     curr = getattr(hs, "head", None)
     while curr:
@@ -48,6 +53,8 @@ def _find_patient(pid: int):
             return curr
         curr = curr.next
     return None
+
+
 def _snapshot(status_msg: str | None = None) -> dict:
     patients = _collect_patients()
     queue_list = list(getattr(hs, "queue", []))
@@ -70,6 +77,8 @@ def _snapshot(status_msg: str | None = None) -> dict:
     if status_msg is not None:
         payload["status"] = status_msg
     return payload
+
+
 class HospitalHandler(SimpleHTTPRequestHandler):
     def _send_json(self, code: int, data: dict):
         body = json.dumps(data).encode("utf-8")
@@ -79,6 +88,7 @@ class HospitalHandler(SimpleHTTPRequestHandler):
         self.send_header("Content-Length", str(len(body)))
         self.end_headers()
         self.wfile.write(body)
+
     def do_GET(self):
         clean_path = self.path.split("?", 1)[0]
         if clean_path == "/api/state":
@@ -87,6 +97,7 @@ class HospitalHandler(SimpleHTTPRequestHandler):
         if clean_path == "/":
             self.path = "/index.html"
         return super().do_GET()
+
     def do_POST(self):
         global active_admissions
         clean_path = self.path.split("?", 1)[0]
@@ -97,6 +108,7 @@ class HospitalHandler(SimpleHTTPRequestHandler):
         except json.JSONDecodeError:
             self._send_json(400, {"error": "Invalid JSON"})
             return
+
         if clean_path == "/api/add-patient":
             try:
                 pid = int(str(data.get("id", "")).strip())
@@ -128,10 +140,11 @@ class HospitalHandler(SimpleHTTPRequestHandler):
             self._send_json(
                 200,
                 _snapshot(
-                    f"Add Patient: Added ID {pid} | Name: {name} | Age: {age} | Disease: {disease} | {doc_obj['name']} ({doc_obj['field']})"
+                    f"Add Patient: Patient ID {pid} | Name: {name} | Age: {age} | Disease: {disease} | {doc_obj['name']} ({doc_obj['field']})"
                 ),
             )
             return
+
         if clean_path == "/api/book-appointment":
             name = str(data.get("name", "")).strip()
             doctor_choice = str(data.get("doctor", "")).strip()
@@ -146,6 +159,7 @@ class HospitalHandler(SimpleHTTPRequestHandler):
                 ),
             )
             return
+
         if clean_path == "/api/call-next":
             if not hs.queue:
                 self._send_json(200, _snapshot("Call Next Patient: No pending appointments in queue."))
@@ -164,6 +178,7 @@ class HospitalHandler(SimpleHTTPRequestHandler):
                 ),
             )
             return
+
         if clean_path == "/api/cancel-appointment":
             idx = data.get("index", -1)
             if isinstance(idx, int) and 0 <= idx < len(hs.queue):
@@ -173,6 +188,7 @@ class HospitalHandler(SimpleHTTPRequestHandler):
             else:
                 self._send_json(200, _snapshot("Cancel Appointment: No appointment removed."))
             return
+
         if clean_path == "/api/search-patient":
             try:
                 pid = int(str(data.get("id", "")).strip())
@@ -184,17 +200,22 @@ class HospitalHandler(SimpleHTTPRequestHandler):
             if node:
                 meta = patient_meta.get(pid, {"doctor": "Dr. Ibrahim Ashraf", "field": "General Medicine"})
                 info = (
-                    f"ID: {node.id} | Name: {node.name} | Age: {node.age} | "
+                    f"Patient ID {node.id} | Name: {node.name} | Age: {node.age} | "
                     f"Disease: {node.disease} | {meta['doctor']} ({meta['field']})"
                 )
                 self._send_json(200, _snapshot(f"Search Patient: Found -> {info}"))
             else:
                 self._send_json(200, _snapshot(f"Search Patient: Patient with ID {pid} not found."))
             return
+
         self._send_json(404, {"error": "Not found"})
+
+
 def main():
     server = ThreadingHTTPServer(("127.0.0.1", 8080), HospitalHandler)
     print("Server running at http://127.0.0.1:8080")
     server.serve_forever()
+
+
 if __name__ == "__main__":
     main()

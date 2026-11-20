@@ -57,6 +57,22 @@
       el.textContent = msg;
     }
   }
+  function selectDoctorFromList(docObj) {
+    if (!docObj) return;
+    const selAdd = document.getElementById("selDoctor");
+    const selAppt = document.getElementById("selApptDoctor");
+    [selAdd, selAppt].forEach((sel) => {
+      if (!sel) return;
+      for (let i = 0; i < sel.options.length; i++) {
+        if (sel.options[i].value.indexOf(docObj.name) === 0) {
+          sel.selectedIndex = i;
+          break;
+        }
+      }
+    });
+    appState.status = `Doctor Selected: ${docObj.name} — ${docObj.field} (${docObj.status})`;
+    renderAll();
+  }
   function renderAll() {
     document.getElementById("statTotal").textContent = appState.kpis.totalPatients;
     document.getElementById("statQueue").textContent = appState.kpis.waitingQueue;
@@ -65,11 +81,17 @@
     const docsBox = document.getElementById("doctorsListBox");
     const docs = appState.doctors && appState.doctors.length ? appState.doctors : DOCTORS_DATA;
     docsBox.innerHTML = docs
-      .map((d) => {
+      .map((d, idx) => {
         const stCls = d.status === "On Duty" ? "doc-badge-duty" : "doc-badge-avail";
-        return `<span class="doc-badge ${stCls}">${esc(d.name)} — ${esc(d.field)} (${esc(d.status)})</span>`;
+        return `<button type="button" class="doc-badge ${stCls}" data-didx="${idx}">${esc(d.name)} — ${esc(d.field)} (${esc(d.status)})</button>`;
       })
       .join("");
+    docsBox.querySelectorAll(".doc-badge[data-didx]").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        const idx = Number(btn.getAttribute("data-didx"));
+        selectDoctorFromList(docs[idx]);
+      });
+    });
 
     const dl = document.getElementById("patientNameList");
     if (dl) {
@@ -299,7 +321,7 @@
     document.getElementById("btnAddPatient")?.addEventListener("click", onAddPatientClick);
     document.getElementById("btnBookAppt")?.addEventListener("click", onBookApptClick);
     document.getElementById("btnCallNextSide")?.addEventListener("click", onCallNextClick);
-    document.getElementById("btnCallNextMain")?.addEventListener("click", onCallNextClick);
+    document.getElementById("btnCallNextQueue")?.addEventListener("click", onCallNextClick);
     document.getElementById("btnCancelAppt")?.addEventListener("click", onCancelApptClick);
     document.getElementById("btnSearchPatient")?.addEventListener("click", onSearchClick);
     document.getElementById("btnClearSearch")?.addEventListener("click", onClearSearchClick);

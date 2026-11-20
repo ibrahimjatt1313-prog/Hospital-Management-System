@@ -11,11 +11,11 @@
     <header class="top-bar">
       <div>
         <h1>Hospital Management System</h1>
-        <p class="subtext">Patients (Linked List) & Appointments (Queue) — Connected to backend.py</p>
+        <p class="subtext">Patients & Book Appointments</p>
       </div>
       <div class="header-meta">
         <button id="btnThemeToggle" class="theme-toggle-btn" type="button" onclick="toggleThemeNow()" aria-label="Switch Theme">
-          Theme: Current
+          Theme
         </button>
         <span class="badge-online">● Online</span>
         <div id="clockDisplay" class="clock-text"></div>
@@ -64,7 +64,7 @@
             <option value="Dr. Abubakar Naveed — Orthopedics">Dr. Abubakar Naveed — Orthopedics</option>
             <option value="Dr. Bisma Iqbal — Pediatrics">Dr. Bisma Iqbal — Pediatrics</option>
             <option value="Dr. Aibtasam Ali — Neurology">Dr. Aibtasam Ali — Neurology</option>
-            <option value="Dr. Ibrahim Ali — ENT & Dermatology">Ibrahim Ali — ENT & Dermatology</option>
+            <option value="Dr. Ibrahim Ali — ENT & Dermatology">Dr. Ibrahim Ali — ENT & Dermatology</option>
           </select>
           <div class="row-2 btn-row-compact">
             <button id="btnBookAppt" class="action-btn btn-primary" type="button" onclick="bookApptNow()">
@@ -171,8 +171,8 @@
               <div class="header-line"></div>
             </div>
             <div class="queue-top-actions">
-              <span>Live FIFO Queue</span>
-              <button id="btnCallNextMain" class="action-btn btn-primary btn-compact" type="button" onclick="callNextNow()">
+              <span>Live Info</span>
+              <button id="btnCallNextQueue" class="action-btn btn-primary btn-compact" type="button" onclick="callNextNow()">
                 Call Next Patient
               </button>
             </div>
@@ -237,14 +237,7 @@
     function syncThemeButton() {
       var btn = document.getElementById("btnThemeToggle");
       if (!btn) return;
-      var mode = getActiveThemeMode();
-      if (mode === "midnight") {
-        btn.textContent = "Theme: Blue + Black";
-      } else if (mode === "dark") {
-        btn.textContent = "Theme: Dark";
-      } else {
-        btn.textContent = "Theme: Current";
-      }
+      btn.textContent = "Theme";
     }
     function applyTheme(mode) {
       document.body.classList.remove("dark-theme", "midnight-theme");
@@ -283,6 +276,30 @@
         box.innerHTML = "<strong>" + title + ":</strong> " + text;
       }
     }
+    function selectDoctorBadge(idx) {
+      var label = doctorsInfo[idx];
+      if (!label) return;
+      var cleanDoc = label.replace(/\s*\((Available|On Duty)\)\s*$/, "");
+      var selAdd = document.getElementById("selDoctor");
+      var selAppt = document.getElementById("selApptDoctor");
+      if (selAdd) {
+        for (var i = 0; i < selAdd.options.length; i++) {
+          if (selAdd.options[i].value.indexOf(cleanDoc.split(" — ")[0]) === 0) {
+            selAdd.selectedIndex = i;
+            break;
+          }
+        }
+      }
+      if (selAppt) {
+        for (var j = 0; j < selAppt.options.length; j++) {
+          if (selAppt.options[j].value.indexOf(cleanDoc.split(" — ")[0]) === 0) {
+            selAppt.selectedIndex = j;
+            break;
+          }
+        }
+      }
+      setOutput("Doctor Selected", label);
+    }
     function renderDoctorsBar() {
       var box = document.getElementById("doctorsListBox");
       if (!box) return;
@@ -290,7 +307,7 @@
       for (var i = 0; i < doctorsInfo.length; i++) {
         var label = doctorsInfo[i];
         var statusCls = label.indexOf("(On Duty)") !== -1 ? " doc-badge-duty" : " doc-badge-avail";
-        html += '<span class="doc-badge' + statusCls + '">' + label + "</span>";
+        html += '<button type="button" class="doc-badge' + statusCls + '" onclick="selectDoctorBadge(' + i + ')">' + label + "</button>";
       }
       box.innerHTML = html;
     }
@@ -515,7 +532,7 @@
     }
     function cancelApptNow() {
       if (selectedQueueIdx < 0 || selectedQueueIdx >= queueData.length) {
-        setOutput("Cancel Appointment", "Please click an appointment in Live FIFO Queue first.");
+        setOutput("Cancel Appointment", "Please click an appointment in Live Info queue first.");
         return;
       }
       var removed = queueData.splice(selectedQueueIdx, 1)[0];
