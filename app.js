@@ -23,10 +23,10 @@
   };
   function esc(v) {
     return String(v ?? "")
-      .replace(/&/g, "&")
-      .replace(/</g, "<")
-      .replace(/>/g, ">")
-      .replace(/"/g, """);
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;");
   }
   function updateClockDisplay() {
     const now = new Date();
@@ -64,7 +64,8 @@
     [selAdd, selAppt].forEach((sel) => {
       if (!sel) return;
       for (let i = 0; i < sel.options.length; i++) {
-        if (sel.options[i].value.indexOf(docObj.name) === 0) {
+        const optVal = sel.options[i].value;
+        if (optVal.indexOf(docObj.name) === 0 || optVal.indexOf(`${docObj.name} — ${docObj.field}`) === 0) {
           sel.selectedIndex = i;
           break;
         }
@@ -74,10 +75,11 @@
     renderAll();
   }
   function renderAll() {
+    const availDocsCount = (appState.doctors || DOCTORS_DATA).filter((d) => d.status === "Available").length;
     document.getElementById("statTotal").textContent = appState.kpis.totalPatients;
     document.getElementById("statQueue").textContent = appState.kpis.waitingQueue;
     document.getElementById("statAdmissions").textContent = appState.kpis.activeAdmissions;
-    document.getElementById("statDoctors").textContent = appState.kpis.availableDoctors;
+    document.getElementById("statDoctors").textContent = availDocsCount || appState.kpis.availableDoctors;
     const docsBox = document.getElementById("doctorsListBox");
     const docs = appState.doctors && appState.doctors.length ? appState.doctors : DOCTORS_DATA;
     docsBox.innerHTML = docs
@@ -279,7 +281,8 @@
       renderAll();
       return;
     }
-    const removed = appState.queue.splice(selectedQueueIdx, 1)[0];
+    const targetIdx = selectedQueueIdx;
+    const removed = appState.queue.splice(targetIdx, 1)[0];
     selectedQueueIdx = -1;
     appState.queue = appState.queue.map((item, idx) => ({
       name: item.name,
@@ -288,7 +291,7 @@
     appState.kpis.waitingQueue = appState.queue.length;
     appState.status = `Cancel Appointment: Cancelled appointment for ${removed.name}.`;
     renderAll();
-    sendToServer("/api/cancel-appointment", { index: 0 });
+    sendToServer("/api/cancel-appointment", { index: targetIdx });
   }
   function onSearchClick() {
     const raw = document.getElementById("inpSearchId").value.trim();

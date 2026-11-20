@@ -220,12 +220,13 @@
               <button type="button" class="ai-tab-btn" data-tab="03" onclick="switchAiTab('03')">03 Report Summary</button>
               <button type="button" class="ai-tab-btn" data-tab="04" onclick="switchAiTab('04')">04 Doctor AI</button>
               <button type="button" class="ai-tab-btn" data-tab="05" onclick="switchAiTab('05')">05 Analytics AI</button>
+              <button type="button" class="ai-tab-btn" data-tab="06" onclick="switchAiTab('06')">06 Clinical Tools</button>
             </div>
           </div>
 
           <div class="ai-suite-body">
             <div id="aiPane-01" class="ai-pane active">
-              <label for="inpChatQuestion">01 AI Hospital Chatbot — Patient ke questions ka jawab</label>
+              <label for="inpChatQuestion">01 AI Hospital Chatbot — Patient Questions &amp; Guidance</label>
               <div id="quickPrompts-01" class="quick-prompts"></div>
               <div class="ai-inline-row">
                 <input id="inpChatQuestion" type="text" placeholder="e.g. What are OPD timings and chest pain triage rules?" />
@@ -234,7 +235,7 @@
             </div>
 
             <div id="aiPane-02" class="ai-pane">
-              <label for="inpAiApptQuery">02 AI Appointment Booking — Doctor aur appointment search</label>
+              <label for="inpAiApptQuery">02 AI Appointment Booking — Doctor &amp; Slot Finder</label>
               <div id="quickPrompts-02" class="quick-prompts"></div>
               <div class="ai-inline-row">
                 <input id="inpAiApptQuery" type="text" placeholder="e.g. Cardiology or General Medicine slots" />
@@ -245,7 +246,7 @@
             </div>
 
             <div id="aiPane-03" class="ai-pane">
-              <label for="txtMedicalReport">03 AI Medical Report Summarizer — Reports ka simple summary</label>
+              <label for="txtMedicalReport">03 AI Medical Report Summarizer — Clear Report Overview</label>
               <div id="quickPrompts-03" class="quick-prompts"></div>
               <textarea id="txtMedicalReport" rows="2" class="ai-textarea" placeholder="Paste lab report, discharge notes, or diagnostic findings here..."></textarea>
               <div class="ai-inline-row mt-6">
@@ -255,7 +256,7 @@
             </div>
 
             <div id="aiPane-04" class="ai-pane">
-              <label for="inpDocAssistPid">04 AI Doctor Assistant — Patient history aur previous visits ka summary</label>
+              <label for="inpDocAssistPid">04 AI Doctor Assistant — Patient History &amp; Visit Summary</label>
               <div id="quickPrompts-04" class="quick-prompts"></div>
               <div class="ai-inline-row">
                 <input id="inpDocAssistPid" type="number" placeholder="Patient ID (e.g. 1)" />
@@ -265,7 +266,7 @@
             </div>
 
             <div id="aiPane-05" class="ai-pane">
-              <label for="inpAnalyticsFocus">05 AI Hospital Analytics Assistant — Hospital statistics aur management reports</label>
+              <label for="inpAnalyticsFocus">05 AI Hospital Analytics Assistant — Statistics &amp; Management Reports</label>
               <div id="quickPrompts-05" class="quick-prompts"></div>
               <div class="ai-inline-row">
                 <input id="inpAnalyticsFocus" type="text" placeholder="e.g. Department load, queue wait, and active admissions" />
@@ -273,8 +274,37 @@
               </div>
             </div>
 
+            <div id="aiPane-06" class="ai-pane">
+              <label>06 Clinical Operations Tools — Urgent Care, Lookup, Records &amp; Ward Flow</label>
+              <div class="ai-inline-row">
+                <input id="inpDsPriorityName" type="text" placeholder="Emergency Patient Name" />
+                <select id="selDsPriorityLevel" style="max-width: 170px;">
+                  <option value="1">Priority 1 (Critical)</option>
+                  <option value="2">Priority 2 (Urgent)</option>
+                  <option value="5" selected>Priority 5 (Normal)</option>
+                </select>
+                <button type="button" class="action-btn btn-success btn-compact" onclick="runDsPriorityBook()">Add Urgent</button>
+                <button type="button" class="action-btn btn-dark btn-compact" onclick="runDsPriorityCall()">Call Urgent</button>
+              </div>
+              <div class="ai-inline-row mt-6">
+                <input id="inpDsLookupId" type="number" placeholder="Patient ID Lookup" />
+                <button type="button" class="action-btn btn-primary btn-compact" onclick="runDsBstLookup()">Find By ID</button>
+                <button type="button" class="action-btn btn-primary btn-compact" onclick="runDsHashLookup()">Quick Lookup</button>
+                <button type="button" class="action-btn ds-dark-pill btn-compact" onclick="runDsSortByAge()">Sort By Age</button>
+                <button type="button" class="action-btn ds-dark-pill btn-compact" onclick="runDsStackTop()">Recent Action</button>
+                <button type="button" class="action-btn ds-dark-pill btn-compact" onclick="runDsWardGraph()">Ward Flow</button>
+              </div>
+              <div class="ai-inline-row mt-6">
+                <button type="button" class="action-btn btn-primary btn-compact" onclick="renderBstTreeVisual()">Patient Map View</button>
+                <button type="button" class="action-btn btn-success btn-compact" onclick="renderWardGraphVisual()">Ward Network View</button>
+              </div>
+              <div id="dsVisualBox" class="ai-response-box mt-6 ds-canvas-box">
+                <strong>Visual Diagram Area:</strong> Click <strong>Patient Map View</strong> or <strong>Ward Network View</strong> (or <strong>Ward Flow</strong>) to display the visual diagram.
+              </div>
+            </div>
+
             <div id="aiResponseBox" class="ai-response-box">
-              <strong>AI Assistant Ready:</strong> Select any AI tab (01–05) above and click a quick prompt or type your query.
+              <strong>AI Assistant Ready:</strong> Select any AI tab (01–06) above and click a quick prompt or type your query.
             </div>
           </div>
         </section>
@@ -333,6 +363,7 @@
   <script>
     var patientsData = [];
     var queueData = [];
+    var dsActionStack = [];
     var selectedQueueIdx = -1;
     var highlightedId = null;
     var doctorsInfo = [
@@ -372,6 +403,26 @@
     };
     var THEME_ORDER = ["current", "dark", "midnight"];
 
+    var WARD_GRAPH = {
+      "Reception": ["Triage", "OPD"],
+      "Triage": ["Cardiology", "ICU", "Pharmacy"],
+      "OPD": ["Pharmacy", "Discharge"],
+      "Cardiology": ["ICU", "Discharge"],
+      "ICU": ["Discharge"],
+      "Pharmacy": ["Discharge"],
+      "Discharge": []
+    };
+
+    var WARD_COORDS = {
+      "Reception": { x: 95, y: 120 },
+      "Triage": { x: 255, y: 65 },
+      "OPD": { x: 255, y: 185 },
+      "Cardiology": { x: 435, y: 45 },
+      "ICU": { x: 435, y: 120 },
+      "Pharmacy": { x: 435, y: 195 },
+      "Discharge": { x: 615, y: 120 }
+    };
+
     function escapeHtml(str) {
       return String(str || "")
         .replace(/&/g, "&amp;")
@@ -379,6 +430,205 @@
         .replace(/>/g, "&gt;")
         .replace(/"/g, "&quot;")
         .replace(/'/g, "&#39;");
+    }
+
+    function pushDsStack(actionLabel) {
+      if (actionLabel) {
+        dsActionStack.push(actionLabel);
+      }
+    }
+
+    function setDsVisualHtml(title, badgeText, innerHtml) {
+      var box = document.getElementById("dsVisualBox");
+      if (!box) return;
+      var tag = badgeText ? ' <span class="ai-meta-tag">[' + escapeHtml(badgeText) + "]</span>" : "";
+      box.innerHTML =
+        "<div class='ds-visual-header'><strong>" + escapeHtml(title) + "</strong>" + tag + "</div>" +
+        "<div class='ds-visual-body'>" + innerHtml + "</div>";
+    }
+
+    function buildBstFromPatients(list) {
+      function insertNode(node, val) {
+        if (!node) return { val: val, left: null, right: null };
+        if (val.id < node.val.id) node.left = insertNode(node.left, val);
+        else if (val.id > node.val.id) node.right = insertNode(node.right, val);
+        return node;
+      }
+      var root = null;
+      (list || []).forEach(function (p) {
+        root = insertNode(root, p);
+      });
+      return root;
+    }
+
+    function getTraversals(node) {
+      var inorder = [], preorder = [], postorder = [];
+      function dfs(n) {
+        if (!n) return;
+        preorder.push(n.val.id + ":" + n.val.name);
+        dfs(n.left);
+        inorder.push(n.val.id + ":" + n.val.name);
+        dfs(n.right);
+        postorder.push(n.val.id + ":" + n.val.name);
+      }
+      dfs(node);
+      return { inorder: inorder, preorder: preorder, postorder: postorder };
+    }
+
+    function layoutBstNodes(root, highlightId) {
+      var nodes = [];
+      var edges = [];
+      var counter = 0;
+
+      function assignCoords(node, depth) {
+        if (!node) return null;
+        var leftChild = assignCoords(node.left, depth + 1);
+        var x = 55 + counter * 96;
+        counter += 1;
+        var y = 46 + depth * 78;
+        var item = {
+          id: node.val.id,
+          name: node.val.name,
+          x: x,
+          y: y,
+          isMatch: highlightId != null && node.val.id === highlightId
+        };
+        nodes.push(item);
+        var rightChild = assignCoords(node.right, depth + 1);
+        if (leftChild) edges.push({ x1: x, y1: y, x2: leftChild.x, y2: leftChild.y, label: "L" });
+        if (rightChild) edges.push({ x1: x, y1: y, x2: rightChild.x, y2: rightChild.y, label: "R" });
+        return item;
+      }
+
+      assignCoords(root, 0);
+      var width = Math.max(520, counter * 96 + 40);
+      var maxDepth = nodes.reduce(function (m, n) {
+        var d = Math.round((n.y - 46) / 78);
+        return Math.max(m, d);
+      }, 0);
+      var height = Math.max(170, (maxDepth + 1) * 78 + 50);
+      return { nodes: nodes, edges: edges, width: width, height: height };
+    }
+
+    function buildBstSvg(root, highlightId) {
+      var layout = layoutBstNodes(root, highlightId);
+      var svgParts = [];
+      svgParts.push(
+        '<svg class="ds-svg" viewBox="0 0 ' + layout.width + " " + layout.height + '" width="100%" height="' + layout.height + '" role="img" aria-label="Patient Hierarchy Diagram">'
+      );
+      layout.edges.forEach(function (e) {
+        svgParts.push(
+          '<line x1="' + e.x1 + '" y1="' + e.y1 + '" x2="' + e.x2 + '" y2="' + e.y2 + '" class="ds-edge-line" />'
+        );
+      });
+      layout.nodes.forEach(function (n) {
+        var cls = n.isMatch ? "ds-node-circle ds-node-highlight" : "ds-node-circle";
+        var shortName = String(n.name || "").slice(0, 10);
+        svgParts.push('<g transform="translate(' + n.x + "," + n.y + ')">');
+        svgParts.push('<circle r="24" class="' + cls + '" />');
+        svgParts.push('<text y="-2" text-anchor="middle" class="ds-node-id">ID ' + escapeHtml(n.id) + "</text>");
+        svgParts.push('<text y="11" text-anchor="middle" class="ds-node-sub">' + escapeHtml(shortName) + "</text>");
+        svgParts.push("</g>");
+      });
+      svgParts.push("</svg>");
+      return svgParts.join("");
+    }
+
+    function renderBstTreeVisual(highlightId) {
+      var sourceList = patientsData.length
+        ? patientsData
+        : [
+            { id: 10, name: "Root (10)" },
+            { id: 5, name: "Left (5)" },
+            { id: 15, name: "Right (15)" },
+            { id: 3, name: "L-Left (3)" },
+            { id: 12, name: "R-Left (12)" }
+          ];
+      var isDemo = patientsData.length === 0;
+      var root = buildBstFromPatients(sourceList);
+      var svgHtml = buildBstSvg(root, highlightId);
+      var metaHtml = isDemo
+        ? "<div class='ds-meta-strip'><div><em>Sample diagram shown — add patients with IDs in '1. Add Patient' for live patient records.</em></div></div>"
+        : "";
+      setDsVisualHtml(
+        "Patient Hierarchy Diagram",
+        isDemo ? "Sample View" : sourceList.length + " Records",
+        "<div class='ds-svg-scroll'>" + svgHtml + "</div>" + metaHtml
+      );
+    }
+
+    function computeBfsDfs(startNode) {
+      var start = startNode || "Reception";
+      var bfsOrder = [], visitedBfs = {}, q = [start];
+      visitedBfs[start] = true;
+      while (q.length) {
+        var cur = q.shift();
+        bfsOrder.push(cur);
+        (WARD_GRAPH[cur] || []).forEach(function (nxt) {
+          if (!visitedBfs[nxt]) {
+            visitedBfs[nxt] = true;
+            q.push(nxt);
+          }
+        });
+      }
+      var dfsOrder = [], visitedDfs = {};
+      function dfs(u) {
+        visitedDfs[u] = true;
+        dfsOrder.push(u);
+        (WARD_GRAPH[u] || []).forEach(function (v) {
+          if (!visitedDfs[v]) dfs(v);
+        });
+      }
+      dfs(start);
+      return { start: start, bfs_order: bfsOrder, dfs_order: dfsOrder };
+    }
+
+    function buildWardGraphSvg(res) {
+      var parts = [];
+      parts.push('<defs><marker id="wardArrow" viewBox="0 0 10 10" refX="29" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M 0 1 L 10 5 L 0 9 z" class="ds-arrow-head" /></marker></defs>');
+      Object.keys(WARD_GRAPH).forEach(function (fromNode) {
+        var a = WARD_COORDS[fromNode];
+        if (!a) return;
+        (WARD_GRAPH[fromNode] || []).forEach(function (toNode) {
+          var b = WARD_COORDS[toNode];
+          if (!b) return;
+          parts.push(
+            '<line x1="' + a.x + '" y1="' + a.y + '" x2="' + b.x + '" y2="' + b.y + '" class="ds-edge-line" marker-end="url(#wardArrow)" />'
+          );
+        });
+      });
+      Object.keys(WARD_COORDS).forEach(function (nodeName) {
+        var pt = WARD_COORDS[nodeName];
+        var stepIdx = (res.bfs_order || []).indexOf(nodeName);
+        var badge = stepIdx >= 0 ? "Step #" + (stepIdx + 1) : "Ward";
+        parts.push('<g transform="translate(' + pt.x + "," + pt.y + ')">');
+        parts.push('<rect x="-46" y="-22" width="92" height="44" rx="10" class="ds-graph-box" />');
+        parts.push('<text y="-2" text-anchor="middle" class="ds-node-id">' + escapeHtml(nodeName) + "</text>");
+        var svgStep = '<text y="13" text-anchor="middle" class="ds-node-sub">' + escapeHtml(badge) + "</text>";
+        parts.push(svgStep);
+        parts.push("</g>");
+      });
+      return (
+        '<svg class="ds-svg" viewBox="0 0 710 240" width="100%" height="240" role="img" aria-label="Hospital Ward Network Diagram">' +
+        parts.join("") +
+        "</svg>"
+      );
+    }
+
+    function renderWardGraphVisual() {
+      var res = computeBfsDfs("Reception");
+      var svgHtml = buildWardGraphSvg(res);
+      var metaHtml =
+        "<div class='ds-meta-strip'>" +
+        "<div><strong>Primary Route (Reception):</strong> " + escapeHtml(res.bfs_order.join(" → ")) + "</div>" +
+        "<div><strong>Alternate Route (Reception):</strong> " + escapeHtml(res.dfs_order.join(" → ")) + "</div>" +
+        "</div>";
+      setDsVisualHtml("Hospital Ward Network Diagram", "Routes", "<div class='ds-svg-scroll'>" + svgHtml + "</div>" + metaHtml);
+      setAiOutput(
+        "06 Clinical Tools — Ward Flow",
+        "Start: " + res.start,
+        "Primary Route: " + res.bfs_order.join(" -> ") + "\nAlternate Route: " + res.dfs_order.join(" -> ")
+      );
     }
 
     function getActiveThemeMode() {
@@ -533,6 +783,165 @@
     function runAiAnalytics() {
       var focus = document.getElementById("inpAnalyticsFocus").value.trim() || "Hospital statistics and management report";
       callAiEndpoint("/api/ai/analytics", { focus: focus }, "05 AI Hospital Analytics Assistant");
+    }
+
+    function runDsPriorityBook() {
+      var name = document.getElementById("inpDsPriorityName").value.trim();
+      var priority = parseInt(document.getElementById("selDsPriorityLevel").value, 10) || 5;
+      if (!name) {
+        setAiOutput("06 Clinical Tools — Urgent Care", "Input Required", "Please enter a patient name first.");
+        return;
+      }
+      pushDsStack("URGENT_ADD:" + name + ":P" + priority);
+      fetch("/api/ds/priority-book", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: name, priority: priority })
+      })
+        .then(function (r) { return r.ok ? r.json() : null; })
+        .then(function (d) {
+          if (!d) return setAiOutput("06 Clinical Tools", "Offline", "Start FastAPI server first.");
+          document.getElementById("inpDsPriorityName").value = "";
+          var nextTxt = d.next_highest_priority ? d.next_highest_priority.name + " (P" + d.next_highest_priority.priority + ")" : "None";
+          setAiOutput("06 Clinical Tools — Urgent Care", "Added", "Added: " + d.patient + " (Priority " + d.priority + ")\nNext Urgent Patient: " + nextTxt);
+        })
+        .catch(function () {
+          setAiOutput("06 Clinical Tools", "Offline", "Could not reach `/api/ds/priority-book`.");
+        });
+    }
+
+    function runDsPriorityCall() {
+      pushDsStack("URGENT_CALL");
+      fetch("/api/ds/priority-call-next", { method: "POST" })
+        .then(function (r) { return r.ok ? r.json() : null; })
+        .then(function (d) {
+          if (!d) return setAiOutput("06 Clinical Tools", "Offline", "Start FastAPI server first.");
+          if (!d.attended) return setAiOutput("06 Clinical Tools — Urgent Care", "Empty", "No urgent appointments in queue.");
+          setAiOutput("06 Clinical Tools — Urgent Care", "Attending", "Now Attending: " + d.attended.name + " (Priority " + d.attended.priority + ")");
+        })
+        .catch(function () {
+          setAiOutput("06 Clinical Tools", "Offline", "Could not reach `/api/ds/priority-call-next`.");
+        });
+    }
+
+    function runDsBstLookup() {
+      var raw = document.getElementById("inpDsLookupId").value.trim();
+      if (!raw) return setAiOutput("06 Clinical Tools — ID Lookup", "Input Required", "Enter a Patient ID.");
+      var targetId = parseInt(raw, 10);
+      fetch("/api/ds/bst-lookup/" + targetId)
+        .then(function (r) { return r.ok ? r.json() : null; })
+        .then(function (d) {
+          if (!d) {
+            var localMatch = patientsData.find(function (p) { return p.id === targetId; });
+            var root = buildBstFromPatients(patientsData);
+            var trav = getTraversals(root);
+            var msgLocal = localMatch
+              ? "Found -> ID " + localMatch.id + " | " + localMatch.name + " (" + localMatch.disease + ")\nPatient Sequence: " + (trav.inorder.join(", ") || "Empty")
+              : "Patient ID " + targetId + " not found.\nPatient Sequence: " + (trav.inorder.join(", ") || "Empty");
+            setAiOutput("06 Clinical Tools — ID Lookup", "Local Lookup", msgLocal);
+            renderBstTreeVisual(localMatch ? localMatch.id : null);
+            return;
+          }
+          var ids = (d.inorder_records || []).map(function (x) { return x.id + ":" + x.name; }).join(", ") || "Empty";
+          var msg = d.found
+            ? "Found -> ID " + d.patient.id + " | " + d.patient.name + " (" + d.patient.disease + ")\nPatient Sequence: " + ids
+            : "Patient ID " + raw + " not found.\nPatient Sequence: " + ids;
+          setAiOutput("06 Clinical Tools — ID Lookup", "Matched", msg);
+          renderBstTreeVisual(d.found && d.patient ? d.patient.id : null);
+        })
+        .catch(function () {
+          renderBstTreeVisual(targetId);
+        });
+    }
+
+    function runDsHashLookup() {
+      var raw = document.getElementById("inpDsLookupId").value.trim();
+      if (!raw) return setAiOutput("06 Clinical Tools — Quick Lookup", "Input Required", "Enter a Patient ID.");
+      var targetId = parseInt(raw, 10);
+      var localBucket = Math.abs(targetId) % 31;
+      var localHit = patientsData.find(function (p) { return p.id === targetId; });
+
+      fetch("/api/ds/hash-lookup/" + targetId)
+        .then(function (r) { return r.ok ? r.json() : null; })
+        .then(function (d) {
+          if (!d || typeof d.found !== "boolean") {
+            var msgLocal = localHit
+              ? "Record Found (Slot #" + localBucket + ") -> ID " + localHit.id + " | " + localHit.name + " (" + localHit.disease + ")"
+              : "No Record in Slot #" + localBucket + " for ID " + targetId;
+            setAiOutput("06 Clinical Tools — Quick Lookup", "Local Lookup", msgLocal);
+            return;
+          }
+          var msg = d.found
+            ? "Record Found (Slot #" + d.bucket + ") -> ID " + d.record.id + " | " + d.record.name + " (" + d.record.disease + ")"
+            : "No Record in Slot #" + d.bucket + " for ID " + raw;
+          setAiOutput("06 Clinical Tools — Quick Lookup", "Instant", msg);
+        })
+        .catch(function () {
+          var errMsg = localHit
+            ? "Record Found (Slot #" + localBucket + ") -> ID " + localHit.id + " | " + localHit.name + " (" + localHit.disease + ")"
+            : "No Record in Slot #" + localBucket + " for ID " + targetId;
+          setAiOutput("06 Clinical Tools — Quick Lookup", "Local Lookup", errMsg);
+        });
+    }
+
+    function runDsSortByAge() {
+      var sortedLocal = patientsData.slice().sort(function (a, b) { return a.age - b.age; });
+      var listLocal = sortedLocal.map(function (p) { return p.name + " (" + p.age + "y)"; }).join(" -> ") || "No patients added yet.";
+
+      fetch("/api/ds/sorted-by-age")
+        .then(function (r) { return r.ok ? r.json() : null; })
+        .then(function (d) {
+          if (!d || !Array.isArray(d.patients) || !d.patients.length) {
+            setAiOutput("06 Clinical Tools — Sort By Age", "Ascending Age", listLocal);
+            return;
+          }
+          var list = d.patients.map(function (p) { return p.name + " (" + p.age + "y)"; }).join(" -> ") || "No patients added yet.";
+          setAiOutput("06 Clinical Tools — Sort By Age", "Ascending Age", list);
+        })
+        .catch(function () {
+          setAiOutput("06 Clinical Tools — Sort By Age", "Ascending Age", listLocal);
+        });
+    }
+
+    function runDsStackTop() {
+      var fallbackTop = dsActionStack.length
+        ? dsActionStack[dsActionStack.length - 1]
+        : (patientsData.length
+            ? "Latest Patient: ID " + patientsData[patientsData.length - 1].id + " (" + patientsData[patientsData.length - 1].name + ")"
+            : "No recent actions recorded yet.");
+
+      fetch("/api/ds/stack-top")
+        .then(function (r) { return r.ok ? r.json() : null; })
+        .then(function (d) {
+          if (!d || (!d.top_action && d.is_empty !== true)) {
+            setAiOutput("06 Clinical Tools — Recent Action", dsActionStack.length || patientsData.length ? "Latest" : "Empty", fallbackTop);
+            return;
+          }
+          setAiOutput("06 Clinical Tools — Recent Action", d.is_empty ? "Empty" : "Latest", d.top_action || "No recent actions recorded yet.");
+        })
+        .catch(function () {
+          setAiOutput("06 Clinical Tools — Recent Action", dsActionStack.length || patientsData.length ? "Latest" : "Empty", fallbackTop);
+        });
+    }
+
+    function runDsWardGraph() {
+      fetch("/api/ds/ward-route/Reception")
+        .then(function (r) { return r.ok ? r.json() : null; })
+        .then(function (d) {
+          if (!d) {
+            var localRes = computeBfsDfs("Reception");
+            var localMsg = "Primary Route: " + localRes.bfs_order.join(" -> ") + "\nAlternate Route: " + localRes.dfs_order.join(" -> ");
+            setAiOutput("06 Clinical Tools — Ward Flow", "Local Start: Reception", localMsg);
+            renderWardGraphVisual();
+            return;
+          }
+          var msg = "Primary Route: " + (d.bfs_order || []).join(" -> ") + "\nAlternate Route: " + (d.dfs_order || []).join(" -> ");
+          setAiOutput("06 Clinical Tools — Ward Flow", "Start: " + d.start, msg);
+          renderWardGraphVisual();
+        })
+        .catch(function () {
+          renderWardGraphVisual();
+        });
     }
 
     function openRxSlipById(pid) {
@@ -732,6 +1141,7 @@
       if (!replaced) {
         patientsData.push(record);
       }
+      pushDsStack("ADD_PATIENT:" + pid + ":" + nameVal);
       highlightedId = pid;
       document.getElementById("inpId").value = "";
       document.getElementById("inpName").value = "";
@@ -762,6 +1172,7 @@
         return;
       }
       queueData.push({ name: nameVal, doctor: docVal });
+      pushDsStack("BOOK_APPT:" + nameVal);
       document.getElementById("inpApptName").value = "";
       refreshAll();
       setOutput(
@@ -781,6 +1192,7 @@
           patientsData[i].status = "Completed";
         }
       }
+      pushDsStack("CALL_NEXT:" + nextItem.name);
       refreshAll();
       setOutput(
         "Call Next Patient",
@@ -794,6 +1206,7 @@
         return;
       }
       var removed = queueData.splice(selectedQueueIdx, 1)[0];
+      pushDsStack("CANCEL_APPT:" + removed.name);
       selectedQueueIdx = -1;
       refreshAll();
       setOutput("Cancel Appointment", "Cancelled appointment for " + removed.name + ".");

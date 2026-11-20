@@ -12,12 +12,15 @@ from pydantic import BaseModel, Field
 from sqlalchemy import Column, Integer, String, Text, create_engine, select
 from sqlalchemy.orm import declarative_base, sessionmaker
 
-from backend import HospitalSystem
+try:
+    from backend import HospitalSystem
+except ImportError:
+    from backend_2 import HospitalSystem
 
 BASE_DIR = Path(__file__).resolve().parent
 load_dotenv(BASE_DIR / ".env")
 
-app = FastAPI(title="Hospital Management System — AI & LLM Backend", version="2.0.0")
+app = FastAPI(title="Hospital Management System — AI & LLM Backend", version="2.1.0")
 
 app.add_middleware(
     CORSMiddleware,
@@ -27,9 +30,6 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# ---------------------------------------------------------------------------
-# 1. HMS Database Layer (SQLAlchemy + SQLite Fallback)
-# ---------------------------------------------------------------------------
 default_db = "/tmp/hms_records.db" if os.getenv("VERCEL") else (BASE_DIR / "hms_records.db").as_posix()
 DATABASE_URL = os.getenv("DATABASE_URL", "").strip() or f"sqlite:///{default_db}"
 connect_args = {"check_same_thread": False} if DATABASE_URL.startswith("sqlite") else {}
@@ -54,9 +54,6 @@ class PatientDB(Base):
 
 Base.metadata.create_all(bind=engine)
 
-# ---------------------------------------------------------------------------
-# 2. In-Memory State + Doctors Directory
-# ---------------------------------------------------------------------------
 hs = HospitalSystem()
 patient_meta: dict[int, dict[str, str]] = {}
 active_admissions = 0
@@ -70,9 +67,6 @@ DOCTORS_DIRECTORY = [
     {"name": "Dr. Ibrahim Ali", "field": "ENT & Dermatology", "status": "On Duty", "slots": ["12:00 PM", "03:30 PM"]},
 ]
 
-# ---------------------------------------------------------------------------
-# 3. Hospital Knowledge Base & Document Retrieval
-# ---------------------------------------------------------------------------
 HOSPITAL_DOCS: list[dict[str, str]] = [
     {
         "title": "OPD & Visiting Hours Policy",
@@ -128,9 +122,6 @@ def _search_docs(query: str, top_k: int = 3) -> list[dict[str, str]]:
     return [item[1] for item in scored[:top_k]]
 
 
-# ---------------------------------------------------------------------------
-# 4. Gemini AI Runner (with Safe Local HMS Fallback)
-# ---------------------------------------------------------------------------
 def _run_llm(system_prompt: str, user_prompt: str, fallback_text: str) -> tuple[str, str]:
     gemini_key = os.getenv("GEMINI_API_KEY", "").strip() or os.getenv("GOOGLE_API_KEY", "").strip()
     if gemini_key:
@@ -269,9 +260,6 @@ def _snapshot(status_msg: str | None = None) -> dict[str, Any]:
     return payload
 
 
-# ---------------------------------------------------------------------------
-# 5. Request Schemas
-# ---------------------------------------------------------------------------
 class AddPatientReq(BaseModel):
     id: int
     name: str
@@ -293,6 +281,12 @@ class CancelApptReq(BaseModel):
 
 class SearchPatientReq(BaseModel):
     id: int
+
+
+class PriorityAppointmentReq(BaseModel):
+    name: str = Field(..., min_length=1)
+    priority: int = Field(default=5, ge=1, le=10)
+    doctor: str = "Dr. Ibrahim Ashraf — General Medicine"
 
 
 class ChatbotReq(BaseModel):
@@ -320,9 +314,6 @@ class AnalyticsReq(BaseModel):
     focus: str = "Overall hospital statistics and management summary"
 
 
-# ---------------------------------------------------------------------------
-# 6. Static UI + HMS Endpoints + 5 AI Endpoints
-# ---------------------------------------------------------------------------
 @app.get("/")
 def serve_index():
     return FileResponse(BASE_DIR / "index.html")
@@ -419,6 +410,91 @@ def api_search_patient(req: SearchPatientReq):
         return _snapshot(f"Search Patient: Found -> {info}")
     return _snapshot(f"Search Patient: Patient with ID {pid} not found.")
 
+
+@app.post("/api/ds/priority-book")
+def api_ds_priority_book(req: PriorityAppointmentReq):
+    pq = getattr(hs, "priority_queue", None)
+    if pq is None:
+        return JSONResponse({"error": "Priority queue not initialized"}, status_code=400)
+    clean_name = req.name.strip()
+    pq.enqueue_priority(clean_name, priority=req.priority, doctor=req.doctor.strip())
+    if hasattr(hs, "action_stack"):
+        hs.action_stack.push(f"API_PRIORITY_BOOK:{clean_name}:P{req.priority}")
+    return {
+        "status": "Priority appointment queued",
+        "patient": clean_name,
+        "priority": req.priority,
+        "next_highest_priority": pq.peek(),
+    }
+
+
+@app.post("/api/ds/priority-call-next")
+def api_ds_priority_call_next():
+    pq = getattr(hs, "priority_queue", None)
+    if pq is None:
+        return JSONResponse({"error": "Priority queue not initialized"}, status_code=400)
+    attended = pq.dequeue_priority()
+    if not attended:
+        return {"status": "No priority appointments in queue", "attended": None}
+    if hasattr(hs, "action_stack"):
+        hs.action_stack.push(f"API_PRIORITY_CALL:{attended['name']}")
+    return {
+        "status": "Attending highest-priority patient",
+        "attended": attended,
+        "next_in_line": pq.peek(),
+    }
+
+
+@app.get("/api/ds/bst-lookup/{patient_id}")
+def api_ds_bst_lookup(patient_id: int):
+    bst = getattr(hs, "bst", None)
+    if bst is None:
+        return JSONResponse({"error": "BST not initialized"}, status_code=400)
+    found = bst.search(patient_id)
+    return {
+        "found": found is not None,
+        "patient": {"id": found.pid, "name": found.name, "disease": found.disease} if found else None,
+        "inorder_records": bst.inorder(),
+    }
+
+
+@app.get("/api/ds/sorted-by-age")
+def api_ds_sorted_by_age():
+    if not hasattr(hs, "get_sorted_patients_by_age"):
+        return JSONResponse({"error": "Sorting helper not available"}, status_code=400)
+    sorted_list = hs.get_sorted_patients_by_age()
+    return {"count": len(sorted_list), "sorted_by": "age (insertion sort)", "patients": sorted_list}
+
+
+@app.get("/api/ds/stack-top")
+def api_ds_stack_top():
+    stack = getattr(hs, "action_stack", None)
+    if stack is None:
+        return JSONResponse({"error": "Action stack not initialized"}, status_code=400)
+    return {"is_empty": stack.is_empty(), "top_action": stack.top_value()}
+@app.get("/api/ds/hash-lookup/{patient_id}")
+def api_ds_hash_lookup(patient_id: int):
+    ht = getattr(hs, "hash_index", None)
+    if ht is None:
+        return JSONResponse({"error": "Hash index not initialized"}, status_code=400)
+    record = ht.get(patient_id)
+    return {
+        "found": record is not None,
+        "bucket": patient_id % ht.size if getattr(ht, "size", 0) else None,
+        "record": record,
+    }
+
+
+@app.get("/api/ds/ward-route/{start_ward}")
+def api_ds_ward_route(start_ward: str):
+    wg = getattr(hs, "ward_graph", None)
+    if wg is None:
+        return JSONResponse({"error": "Ward graph not initialized"}, status_code=400)
+    return {
+        "start": start_ward,
+        "bfs_order": wg.bfs(start_ward),
+        "dfs_order": wg.dfs(start_ward),
+    }
 
 @app.post("/api/ai/chatbot")
 def ai_chatbot(req: ChatbotReq):

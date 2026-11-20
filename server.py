@@ -1,6 +1,9 @@
 import json
-from http.server import ThreadingHTTPServer,SimpleHTTPRequestHandler
-from backend import HospitalSystem
+from http.server import ThreadingHTTPServer, SimpleHTTPRequestHandler
+try:
+    from backend import HospitalSystem
+except ImportError:
+    from backend_2 import HospitalSystem
 hs = HospitalSystem()
 patient_meta: dict[int, dict[str, str]] = {}
 active_admissions = 0
@@ -14,7 +17,7 @@ DOCTORS_DIRECTORY = [
 ]
 def _collect_patients() -> list[dict]:
     items = []
-    curr = getattr(hs,"head",None)
+    curr = getattr(hs, "head", None)
     while curr:
         meta = patient_meta.get(
             curr.id,

@@ -14,6 +14,14 @@ body {
   transition: background-color 0.2s ease, color 0.2s ease;
 }
 
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  outline: 2px solid #0d8a6a;
+  outline-offset: 2px;
+}
+
 .app-wrapper {
   max-width: 1540px;
   min-height: 100vh;
@@ -195,15 +203,38 @@ body {
 
 .search-btn-row .action-btn.btn-secondary-soft,
 .btn-secondary-soft {
-  background: #d9ece6;
-  color: #0b4f3e;
-  border: 1px solid #9fd2c3;
+  background: #0f3d36;
+  color: #ffffff;
+  border: 1px solid #092b26;
 }
 
 .search-btn-row .action-btn.btn-secondary-soft:hover,
 .btn-secondary-soft:hover {
-  background: #c7e3da;
-  color: #07382c;
+  background: #0a2e28;
+  color: #ffffff;
+}
+
+/* Dark high-contrast styling for the last 3 DS Lab buttons */
+.ds-dark-pill {
+  background: #0f3d36 !important;
+  color: #ffffff !important;
+  border: 1px solid #082924 !important;
+}
+
+.ds-dark-pill:hover {
+  background: #092c27 !important;
+}
+
+body.dark-theme .ds-dark-pill {
+  background: #1a473c !important;
+  color: #ffffff !important;
+  border-color: #34d399 !important;
+}
+
+body.midnight-theme .ds-dark-pill {
+  background: linear-gradient(135deg, #172f5e 0%, #1e4080 100%) !important;
+  color: #ffffff !important;
+  border-color: #60a5fa !important;
 }
 
 .row-2 {
@@ -706,6 +737,138 @@ body {
   color: #0f2922;
 }
 
+/* SVG Tree & Graph Visual Styles */
+.ds-canvas-box {
+  padding: 12px 14px;
+}
+
+.ds-visual-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 8px;
+}
+
+.ds-svg-scroll {
+  width: 100%;
+  overflow-x: auto;
+  background: #ffffff;
+  border: 1px solid #d5e6e0;
+  border-radius: 8px;
+  padding: 8px;
+}
+
+body.dark-theme .ds-svg-scroll {
+  background: #0d1d19;
+  border-color: #244a40;
+}
+
+body.midnight-theme .ds-svg-scroll {
+  background: #070e1d;
+  border-color: #1e3766;
+}
+
+.ds-svg {
+  display: block;
+  min-width: 520px;
+}
+
+.ds-edge-line {
+  stroke: #0f766e;
+  stroke-width: 2;
+}
+
+.ds-arrow-head {
+  fill: #0f766e;
+}
+
+.ds-node-circle {
+  fill: #e6f7f1;
+  stroke: #0d8a6a;
+  stroke-width: 2.2;
+}
+
+.ds-node-highlight {
+  fill: #0d8a6a;
+  stroke: #064e3b;
+  stroke-width: 2.5;
+}
+
+.ds-graph-box {
+  fill: #eef8f4;
+  stroke: #0d8a6a;
+  stroke-width: 2;
+}
+
+.ds-node-id {
+  font-size: 11px;
+  font-weight: 800;
+  fill: #0f2922;
+}
+
+.ds-node-highlight ~ .ds-node-id,
+.ds-node-highlight ~ .ds-node-sub {
+  fill: #ffffff;
+}
+
+.ds-node-sub {
+  font-size: 9.5px;
+  font-weight: 700;
+  fill: #2d594d;
+}
+
+body.dark-theme .ds-edge-line {
+  stroke: #34d399;
+}
+
+body.dark-theme .ds-arrow-head {
+  fill: #34d399;
+}
+
+body.dark-theme .ds-node-circle,
+body.dark-theme .ds-graph-box {
+  fill: #133129;
+  stroke: #34d399;
+}
+
+body.dark-theme .ds-node-id,
+body.dark-theme .ds-node-sub {
+  fill: #ecfdf5;
+}
+
+body.midnight-theme .ds-edge-line {
+  stroke: #60a5fa;
+}
+
+body.midnight-theme .ds-arrow-head {
+  fill: #60a5fa;
+}
+
+body.midnight-theme .ds-node-circle,
+body.midnight-theme .ds-graph-box {
+  fill: #11244a;
+  stroke: #60a5fa;
+}
+
+body.midnight-theme .ds-node-highlight {
+  fill: #2563eb;
+  stroke: #93c5fd;
+}
+
+body.midnight-theme .ds-node-id,
+body.midnight-theme .ds-node-sub {
+  fill: #f0f9ff;
+}
+
+.ds-meta-strip {
+  margin-top: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  font-size: 12px;
+}
+
 .ai-meta-tag {
   font-size: 11px;
   color: #0d7a5f;
@@ -786,9 +949,9 @@ body.dark-theme .ai-meta-tag {
 
 body.dark-theme .search-btn-row .action-btn.btn-secondary-soft,
 body.dark-theme .btn-secondary-soft {
-  background: #17382f;
-  color: #a7f3d0;
-  border-color: #275c4e;
+  background: #1a473c;
+  color: #ffffff;
+  border-color: #34d399;
 }
 
 body.dark-theme .theme-toggle-btn,
@@ -1027,9 +1190,9 @@ body.midnight-theme .btn-dark {
 
 body.midnight-theme .search-btn-row .action-btn.btn-secondary-soft,
 body.midnight-theme .btn-secondary-soft {
-  background: #0f1c36;
-  color: #93c5fd;
-  border-color: #254173;
+  background: #172f5e;
+  color: #ffffff;
+  border-color: #60a5fa;
 }
 
 body.midnight-theme .search-icon-btn,
