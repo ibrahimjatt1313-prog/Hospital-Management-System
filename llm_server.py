@@ -30,7 +30,8 @@ app.add_middleware(
 # ---------------------------------------------------------------------------
 # 1. HMS Database Layer (SQLAlchemy + SQLite Fallback)
 # ---------------------------------------------------------------------------
-DATABASE_URL = os.getenv("DATABASE_URL", "").strip() or f"sqlite:///{(BASE_DIR / 'hms_records.db').as_posix()}"
+default_db = "/tmp/hms_records.db" if os.getenv("VERCEL") else (BASE_DIR / "hms_records.db").as_posix()
+DATABASE_URL = os.getenv("DATABASE_URL", "").strip() or f"sqlite:///{default_db}"
 connect_args = {"check_same_thread": False} if DATABASE_URL.startswith("sqlite") else {}
 engine = create_engine(DATABASE_URL, pool_pre_ping=True, connect_args=connect_args)
 SessionLocal = sessionmaker(bind=engine, autoflush=False, autocommit=False)
