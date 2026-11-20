@@ -1,0 +1,10 @@
+fastapi
+uvicorn[standard]
+langchain
+langchain-openai
+langchain-community
+openai
+pydantic
+sqlalchemy
+psycopg2-binary
+pymysql

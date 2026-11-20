@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Hospital Management System</title>
+  <title>Hospital Management System + AI Suite</title>
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
@@ -11,13 +11,13 @@
     <header class="top-bar">
       <div>
         <h1>Hospital Management System</h1>
-        <p class="subtext">Patients & Book Appointments</p>
+        <p class="subtext">Patients, Appointments &amp; AI Clinical Suite</p>
       </div>
       <div class="header-meta">
         <button id="btnThemeToggle" class="theme-toggle-btn" type="button" onclick="toggleThemeNow()" aria-label="Switch Theme">
           Theme
         </button>
-        <span class="badge-online">● Online</span>
+        <span class="badge-online">● AI + HMS Online</span>
         <div id="clockDisplay" class="clock-text"></div>
       </div>
     </header>
@@ -41,14 +41,14 @@
           </div>
           <label for="inpDisease">Disease / Medical Field</label>
           <input id="inpDisease" type="text" placeholder="e.g. Fever" />
-          <label for="selDoctor">Assign Doctor & Field</label>
+          <label for="selDoctor">Assign Doctor &amp; Field</label>
           <select id="selDoctor">
             <option value="Dr. Ibrahim Ashraf — General Medicine">Dr. Ibrahim Ashraf — General Medicine</option>
-            <option value="Dr. Shawal Nadeem">Dr. Shawal Nadeem — Cardiology</option>
+            <option value="Dr. Shawal Nadeem — Cardiology">Dr. Shawal Nadeem — Cardiology</option>
             <option value="Dr. Abubakar Naveed — Orthopedics">Dr. Abubakar Naveed — Orthopedics</option>
-            <option value="Dr. Bisma Iqbal">Dr. Bisma Iqbal — Pediatrics</option>
+            <option value="Dr. Bisma Iqbal — Pediatrics">Dr. Bisma Iqbal — Pediatrics</option>
             <option value="Dr. Aibtasam Ali — Neurology">Dr. Aibtasam Ali — Neurology</option>
-            <option value="Dr. Ibrahim Ali — ENT & Dermatology">Dr. Ibrahim Ali — ENT & Dermatology</option>
+            <option value="Dr. Ibrahim Ali — ENT &amp; Dermatology">Dr. Ibrahim Ali — ENT &amp; Dermatology</option>
           </select>
           <button id="btnAddPatient" class="action-btn btn-success" type="button" onclick="addPatientNow()">
             Add Patient
@@ -64,7 +64,7 @@
             <option value="Dr. Abubakar Naveed — Orthopedics">Dr. Abubakar Naveed — Orthopedics</option>
             <option value="Dr. Bisma Iqbal — Pediatrics">Dr. Bisma Iqbal — Pediatrics</option>
             <option value="Dr. Aibtasam Ali — Neurology">Dr. Aibtasam Ali — Neurology</option>
-            <option value="Dr. Ibrahim Ali — ENT & Dermatology">Dr. Ibrahim Ali — ENT & Dermatology</option>
+            <option value="Dr. Ibrahim Ali — ENT &amp; Dermatology">Dr. Ibrahim Ali — ENT &amp; Dermatology</option>
           </select>
           <div class="row-2 btn-row-compact">
             <button id="btnBookAppt" class="action-btn btn-primary" type="button" onclick="bookApptNow()">
@@ -161,7 +161,7 @@
           </div>
         </section>
         <section class="doctors-panel">
-          <span class="doctors-heading">Doctors & Medical Fields:</span>
+          <span class="doctors-heading">Doctors &amp; Medical Fields:</span>
           <div id="doctorsListBox" class="doctors-list"></div>
         </section>
         <section class="content-split">
@@ -196,9 +196,10 @@
                     <th>Name</th>
                     <th>Age</th>
                     <th>Disease</th>
-                    <th>Doctor & Field</th>
+                    <th>Doctor &amp; Field</th>
                     <th>Status</th>
                     <th>Prescription</th>
+                    <th>Rx Slip</th>
                   </tr>
                 </thead>
                 <tbody id="patientsBody"></tbody>
@@ -206,6 +207,78 @@
             </div>
           </div>
         </section>
+
+        <section class="card-panel ai-suite-panel">
+          <div class="card-header-blue ai-header-row">
+            <div>
+              <h2>AI Clinical &amp; Hospital Assistant</h2>
+              <div class="header-line"></div>
+            </div>
+            <div class="ai-tabs" role="tablist">
+              <button type="button" class="ai-tab-btn active" data-tab="01" onclick="switchAiTab('01')">01 Chatbot</button>
+              <button type="button" class="ai-tab-btn" data-tab="02" onclick="switchAiTab('02')">02 Appt AI</button>
+              <button type="button" class="ai-tab-btn" data-tab="03" onclick="switchAiTab('03')">03 Report Summary</button>
+              <button type="button" class="ai-tab-btn" data-tab="04" onclick="switchAiTab('04')">04 Doctor AI</button>
+              <button type="button" class="ai-tab-btn" data-tab="05" onclick="switchAiTab('05')">05 Analytics AI</button>
+            </div>
+          </div>
+
+          <div class="ai-suite-body">
+            <div id="aiPane-01" class="ai-pane active">
+              <label for="inpChatQuestion">01 AI Hospital Chatbot — Patient ke questions ka jawab</label>
+              <div id="quickPrompts-01" class="quick-prompts"></div>
+              <div class="ai-inline-row">
+                <input id="inpChatQuestion" type="text" placeholder="e.g. What are OPD timings and chest pain triage rules?" />
+                <button type="button" class="action-btn btn-primary btn-compact" onclick="runAiChatbot()">Ask AI Bot</button>
+              </div>
+            </div>
+
+            <div id="aiPane-02" class="ai-pane">
+              <label for="inpAiApptQuery">02 AI Appointment Booking — Doctor aur appointment search</label>
+              <div id="quickPrompts-02" class="quick-prompts"></div>
+              <div class="ai-inline-row">
+                <input id="inpAiApptQuery" type="text" placeholder="e.g. Cardiology or General Medicine slots" />
+                <input id="inpAiApptPatient" type="text" placeholder="Patient name (optional to book)" />
+                <button type="button" class="action-btn btn-primary btn-compact" onclick="runAiAppointment(false)">Find Slots</button>
+                <button type="button" class="action-btn btn-success btn-compact" onclick="runAiAppointment(true)">AI Book</button>
+              </div>
+            </div>
+
+            <div id="aiPane-03" class="ai-pane">
+              <label for="txtMedicalReport">03 AI Medical Report Summarizer — Reports ka simple summary</label>
+              <div id="quickPrompts-03" class="quick-prompts"></div>
+              <textarea id="txtMedicalReport" rows="2" class="ai-textarea" placeholder="Paste lab report, discharge notes, or diagnostic findings here..."></textarea>
+              <div class="ai-inline-row mt-6">
+                <input id="inpReportPatient" type="text" placeholder="Patient name (optional)" />
+                <button type="button" class="action-btn btn-primary btn-compact" onclick="runAiReportSummary()">Summarize Report</button>
+              </div>
+            </div>
+
+            <div id="aiPane-04" class="ai-pane">
+              <label for="inpDocAssistPid">04 AI Doctor Assistant — Patient history aur previous visits ka summary</label>
+              <div id="quickPrompts-04" class="quick-prompts"></div>
+              <div class="ai-inline-row">
+                <input id="inpDocAssistPid" type="number" placeholder="Patient ID (e.g. 1)" />
+                <input id="inpDocAssistNote" type="text" placeholder="Clinical question or focus (optional)" />
+                <button type="button" class="action-btn btn-primary btn-compact" onclick="runAiDoctorAssistant()">Get Patient Brief</button>
+              </div>
+            </div>
+
+            <div id="aiPane-05" class="ai-pane">
+              <label for="inpAnalyticsFocus">05 AI Hospital Analytics Assistant — Hospital statistics aur management reports</label>
+              <div id="quickPrompts-05" class="quick-prompts"></div>
+              <div class="ai-inline-row">
+                <input id="inpAnalyticsFocus" type="text" placeholder="e.g. Department load, queue wait, and active admissions" />
+                <button type="button" class="action-btn btn-primary btn-compact" onclick="runAiAnalytics()">Generate Report</button>
+              </div>
+            </div>
+
+            <div id="aiResponseBox" class="ai-response-box">
+              <strong>AI Assistant Ready:</strong> Select any AI tab (01–05) above and click a quick prompt or type your query.
+            </div>
+          </div>
+        </section>
+
         <section class="output-panel">
           <div class="output-header">Status / Output</div>
           <div id="outputMessage" class="output-body">
@@ -215,6 +288,48 @@
       </main>
     </div>
   </div>
+
+  <div id="rxModal" class="rx-modal-backdrop" onclick="closeRxModal(event)">
+    <div class="rx-modal-card" id="printableRxSlip">
+      <div class="rx-header">
+        <div>
+          <h2>Clinical Care Hospital</h2>
+          <p class="rx-sub">Outpatient Prescription &amp; Discharge Summary</p>
+        </div>
+        <div class="rx-meta">
+          <div><strong>Slip ID:</strong> <span id="rxSlipId">-</span></div>
+          <div><strong>Date:</strong> <span id="rxDate">-</span></div>
+        </div>
+      </div>
+
+      <div class="rx-patient-grid">
+        <div><strong>Patient:</strong> <span id="rxPatientName">-</span></div>
+        <div><strong>Patient ID:</strong> <span id="rxPatientId">-</span></div>
+        <div><strong>Age &amp; Disease:</strong> <span id="rxCondition">-</span></div>
+        <div><strong>Doctor &amp; Field:</strong> <span id="rxDoctor">-</span></div>
+        <div><strong>Address:</strong> <span id="rxAddress">-</span></div>
+        <div><strong>Status:</strong> <span id="rxStatus">-</span></div>
+      </div>
+
+      <div class="rx-section">
+        <h3>Prescription &amp; Care Instructions (Rx)</h3>
+        <ul id="rxMedList" class="rx-med-list">
+          <li>Follow primary care regimen: <strong id="rxCareLabel">General Care</strong>.</li>
+          <li>Maintain hydration, adequate rest, and routine vitals monitoring.</li>
+          <li>Return promptly if symptoms worsen or new clinical signs appear.</li>
+        </ul>
+      </div>
+
+      <div class="rx-footer">
+        <span class="rx-sign">HMS Digital Prescription &amp; Discharge Slip</span>
+        <div class="rx-actions no-print">
+          <button type="button" class="btn-print" onclick="window.print()">Print / Save PDF</button>
+          <button type="button" class="btn-close-rx" onclick="closeRxModal()">Close</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <script>
     var patientsData = [];
     var queueData = [];
@@ -228,7 +343,44 @@
       "Dr. Ibrahim Ali — Neurology (On Duty)",
       "Dr. Bisma Iqbal — ENT & Dermatology (On Duty)"
     ];
+    var QUICK_PROMPTS = {
+      "01": [
+        "What are OPD timings and visiting hours?",
+        "How should chest pain patients be prioritized?",
+        "What is the protocol for fever and queue management?"
+      ],
+      "02": [
+        "Show available Cardiology slots today",
+        "Check General Medicine doctors and timings",
+        "List doctors currently Available"
+      ],
+      "03": [
+        "Summarize lab findings into simple bullet points",
+        "Highlight key follow-up points from discharge notes",
+        "Explain diagnostic results in plain language"
+      ],
+      "04": [
+        "Prepare pre-consultation brief for latest patient",
+        "Summarize active condition, prescription, and visit history",
+        "Highlight key clinical details before doctor visit"
+      ],
+      "05": [
+        "Summarize department patient load and queue KPIs",
+        "Give management overview of active admissions",
+        "Highlight operational bottlenecks across departments"
+      ]
+    };
     var THEME_ORDER = ["current", "dark", "midnight"];
+
+    function escapeHtml(str) {
+      return String(str || "")
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#39;");
+    }
+
     function getActiveThemeMode() {
       if (document.body.classList.contains("midnight-theme")) return "midnight";
       if (document.body.classList.contains("dark-theme")) return "dark";
@@ -236,8 +388,7 @@
     }
     function syncThemeButton() {
       var btn = document.getElementById("btnThemeToggle");
-      if (!btn) return;
-      btn.textContent = "Theme";
+      if (btn) btn.textContent = "Theme";
     }
     function applyTheme(mode) {
       document.body.classList.remove("dark-theme", "midnight-theme");
@@ -270,12 +421,139 @@
         applyTheme(savedTheme);
       }
     } catch (e) {}
+
     function setOutput(title, text) {
       var box = document.getElementById("outputMessage");
       if (box) {
-        box.innerHTML = "<strong>" + title + ":</strong> " + text;
+        box.innerHTML = "<strong>" + escapeHtml(title) + ":</strong> " + escapeHtml(text);
       }
     }
+    function setAiOutput(title, meta, text) {
+      var box = document.getElementById("aiResponseBox");
+      if (!box) return;
+      var safeText = escapeHtml(text || "").replace(/\n/g, "<br>");
+      var badge = meta ? ' <span class="ai-meta-tag">[' + escapeHtml(meta) + "]</span>" : "";
+      box.innerHTML = "<strong>" + escapeHtml(title) + ":</strong>" + badge + "<div class='ai-ans-text'>" + safeText + "</div>";
+    }
+    function renderQuickPromptsForTab(tabId) {
+      var targetMap = {
+        "01": "inpChatQuestion",
+        "02": "inpAiApptQuery",
+        "03": "txtMedicalReport",
+        "04": "inpDocAssistNote",
+        "05": "inpAnalyticsFocus"
+      };
+      var container = document.getElementById("quickPrompts-" + tabId);
+      var inputEl = document.getElementById(targetMap[tabId]);
+      if (!container || !inputEl) return;
+      var prompts = QUICK_PROMPTS[tabId] || [];
+      container.innerHTML = "";
+      prompts.forEach(function (p) {
+        var btn = document.createElement("button");
+        btn.type = "button";
+        btn.className = "prompt-chip";
+        btn.textContent = p;
+        btn.addEventListener("click", function () {
+          inputEl.value = p;
+          inputEl.focus();
+        });
+        container.appendChild(btn);
+      });
+    }
+    function switchAiTab(tabId) {
+      document.querySelectorAll(".ai-tab-btn").forEach(function (btn) {
+        btn.classList.toggle("active", btn.getAttribute("data-tab") === tabId);
+      });
+      document.querySelectorAll(".ai-pane").forEach(function (pane) {
+        pane.classList.toggle("active", pane.id === "aiPane-" + tabId);
+      });
+      renderQuickPromptsForTab(tabId);
+    }
+
+    function callAiEndpoint(url, payload, label, onSuccess) {
+      setAiOutput(label, "Processing...", "Connecting to AI backend...");
+      fetch(url, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
+      })
+        .then(function (r) { return r.ok ? r.json() : null; })
+        .then(function (d) {
+          if (!d) {
+            setAiOutput(label, "Offline", "Start FastAPI server (`python -m uvicorn llm_server:app --port 8080`) for live AI responses.");
+            return;
+          }
+          if (typeof onSuccess === "function") onSuccess(d);
+          setAiOutput(d.module || label, d.engine || "AI", d.answer || "Done.");
+          setOutput(d.module || label, (d.answer || "").split("\n")[0]);
+        })
+        .catch(function () {
+          setAiOutput(label, "Offline", "Could not reach AI endpoint. Ensure `llm_server.py` is running.");
+        });
+    }
+    function runAiChatbot() {
+      var q = document.getElementById("inpChatQuestion").value.trim();
+      if (!q) {
+        setAiOutput("01 AI Hospital Chatbot", "Input Required", "Please enter a question about hospital timings, OPD, or policies.");
+        return;
+      }
+      callAiEndpoint("/api/ai/chatbot", { question: q }, "01 AI Hospital Chatbot", function (d) {
+        if (Array.isArray(d.retrieved_docs) && d.retrieved_docs.length) {
+          d.engine = (d.engine || "AI") + " • Sources: " + d.retrieved_docs.join(", ");
+        }
+      });
+    }
+    function runAiAppointment(autoBook) {
+      var q = document.getElementById("inpAiApptQuery").value.trim() || "Available doctors";
+      var pName = document.getElementById("inpAiApptPatient").value.trim();
+      callAiEndpoint("/api/ai/appointment", { query: q, patient_name: pName, auto_book: autoBook }, "02 AI Appointment Booking", function (d) {
+        if (Array.isArray(d.queue)) {
+          queueData = d.queue.map(function (item) {
+            return { name: item.name, doctor: q };
+          });
+          refreshAll();
+        }
+      });
+    }
+    function runAiReportSummary() {
+      var txt = document.getElementById("txtMedicalReport").value.trim();
+      var pName = document.getElementById("inpReportPatient").value.trim();
+      if (!txt) {
+        setAiOutput("03 AI Medical Report Summarizer", "Input Required", "Please paste medical report text first.");
+        return;
+      }
+      callAiEndpoint("/api/ai/summarize-report", { report_text: txt, patient_name: pName }, "03 AI Medical Report Summarizer");
+    }
+    function runAiDoctorAssistant() {
+      var rawPid = document.getElementById("inpDocAssistPid").value.trim();
+      var note = document.getElementById("inpDocAssistNote").value.trim();
+      var pidNum = rawPid ? parseInt(rawPid, 10) : null;
+      callAiEndpoint("/api/ai/doctor-assistant", { patient_id: pidNum, question: note }, "04 AI Doctor Assistant");
+    }
+    function runAiAnalytics() {
+      var focus = document.getElementById("inpAnalyticsFocus").value.trim() || "Hospital statistics and management report";
+      callAiEndpoint("/api/ai/analytics", { focus: focus }, "05 AI Hospital Analytics Assistant");
+    }
+
+    function openRxSlipById(pid) {
+      var p = patientsData.find(function (item) { return item.id === pid; }) || {};
+      document.getElementById("rxSlipId").textContent = "RX-" + String(100000 + Math.floor(Math.random() * 900000));
+      document.getElementById("rxDate").textContent = new Date().toLocaleString();
+      document.getElementById("rxPatientName").textContent = p.name || "Patient";
+      document.getElementById("rxPatientId").textContent = p.id != null ? String(p.id) : "-";
+      document.getElementById("rxCondition").textContent = (p.age ? p.age + "y | " : "") + (p.disease || "General Evaluation");
+      document.getElementById("rxDoctor").textContent = p.doctor || "Dr. Ibrahim Ashraf — General Medicine";
+      document.getElementById("rxAddress").textContent = p.address || "Not specified";
+      document.getElementById("rxStatus").textContent = p.status || "In Progress";
+      document.getElementById("rxCareLabel").textContent = p.prescription || "General Care";
+      document.getElementById("rxModal").classList.add("open");
+    }
+    function closeRxModal(event) {
+      if (!event || event.target.id === "rxModal") {
+        document.getElementById("rxModal").classList.remove("open");
+      }
+    }
+
     function selectDoctorBadge(idx) {
       var label = doctorsInfo[idx];
       if (!label) return;
@@ -307,7 +585,7 @@
       for (var i = 0; i < doctorsInfo.length; i++) {
         var label = doctorsInfo[i];
         var statusCls = label.indexOf("(On Duty)") !== -1 ? " doc-badge-duty" : " doc-badge-avail";
-        html += '<button type="button" class="doc-badge' + statusCls + '" onclick="selectDoctorBadge(' + i + ')">' + label + "</button>";
+        html += '<button type="button" class="doc-badge' + statusCls + '" onclick="selectDoctorBadge(' + i + ')">' + escapeHtml(label) + "</button>";
       }
       box.innerHTML = html;
     }
@@ -324,13 +602,13 @@
       if (dl) {
         var opts = "";
         for (var k = 0; k < patientsData.length; k++) {
-          opts += '<option value="' + patientsData[k].name + '"></option>';
+          opts += '<option value="' + escapeHtml(patientsData[k].name) + '"></option>';
         }
         dl.innerHTML = opts;
       }
       if (patientsData.length === 0) {
         tbody.innerHTML =
-          '<tr><td colspan="7" style="text-align:center; color:#64748b; padding:20px;">No patients added yet.</td></tr>';
+          '<tr><td colspan="8" style="text-align:center; color:#64748b; padding:20px;">No patients added yet.</td></tr>';
         return;
       }
       var rows = "";
@@ -344,29 +622,14 @@
           ' onclick="selectPatientRow(' +
           p.id +
           ')">' +
-          "<td>" +
-          p.id +
-          "</td>" +
-          "<td>" +
-          p.name +
-          "</td>" +
-          "<td>" +
-          p.age +
-          "</td>" +
-          "<td>" +
-          p.disease +
-          "</td>" +
-          "<td>" +
-          p.doctor +
-          "</td>" +
-          '<td><span class="pill-status ' +
-          pillClass +
-          '">' +
-          p.status +
-          "</span></td>" +
-          "<td>" +
-          p.prescription +
-          "</td>" +
+          "<td>" + escapeHtml(p.id) + "</td>" +
+          "<td>" + escapeHtml(p.name) + "</td>" +
+          "<td>" + escapeHtml(p.age) + "</td>" +
+          "<td>" + escapeHtml(p.disease) + "</td>" +
+          "<td>" + escapeHtml(p.doctor) + "</td>" +
+          '<td><span class="pill-status ' + pillClass + '">' + escapeHtml(p.status) + "</span></td>" +
+          "<td>" + escapeHtml(p.prescription) + "</td>" +
+          '<td><button type="button" class="rx-mini-btn" onclick="event.stopPropagation(); openRxSlipById(' + p.id + ')">Rx Slip</button></td>' +
           "</tr>";
       }
       tbody.innerHTML = rows;
@@ -393,12 +656,8 @@
           '" onclick="selectQueueRow(' +
           i +
           ')">' +
-          "<span>" +
-          queueData[i].name +
-          "</span>" +
-          '<span class="queue-meta">' +
-          waitText +
-          "</span>" +
+          "<span>" + escapeHtml(queueData[i].name) + "</span>" +
+          '<span class="queue-meta">' + waitText + "</span>" +
           "</div>";
       }
       qBox.innerHTML = html;
@@ -498,7 +757,6 @@
     function bookApptNow() {
       var nameVal = document.getElementById("inpApptName").value.trim();
       var docVal = document.getElementById("selApptDoctor").value;
-
       if (!nameVal) {
         setOutput("Book Appt", "Please type a patient name first.");
         return;
@@ -590,6 +848,7 @@
     syncThemeButton();
     updateClock();
     setInterval(updateClock, 30000);
+    renderQuickPromptsForTab("01");
     refreshAll();
   </script>
 </body>
