@@ -196,8 +196,10 @@ class HospitalHandler(SimpleHTTPRequestHandler):
             return
         self._send_json(404, {"error": "Not found"})
 def main():
-    server = ThreadingHTTPServer(("127.0.0.1", 8080), HospitalHandler)
+    import uvicorn
+    from llm_server import app
+
     print("Server running at http://127.0.0.1:8080")
-    server.serve_forever()
+    uvicorn.run(app, host="127.0.0.1", port=8080)
 if __name__ == "__main__":
     main()

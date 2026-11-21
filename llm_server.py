@@ -1,3 +1,4 @@
+import logging
 import math
 import os
 import re
@@ -57,6 +58,11 @@ Base.metadata.create_all(bind=engine)
 hs = HospitalSystem()
 patient_meta: dict[int, dict[str, str]] = {}
 active_admissions = 0
+
+
+def _get_queue() -> Any:
+    return getattr(hs, "queue", getattr(hs, "q", []))
+
 
 DOCTORS_DIRECTORY = [
     {"name": "Dr. Ibrahim Ashraf", "field": "General Medicine", "status": "Available", "slots": ["10:00 AM", "11:30 AM", "02:00 PM"]},
@@ -129,23 +135,47 @@ def _run_llm(system_prompt: str, user_prompt: str, fallback_text: str) -> tuple[
             from google import genai
             from google.genai import types
 
-            client = genai.Client(api_key=gemini_key)
-            model_name = os.getenv("GEMINI_MODEL", "gemini-3.8-flash")
-            response = client.models.generate_content(
-                model=model_name,
-                contents=user_prompt,
-                config=types.GenerateContentConfig(
-                    system_instruction=system_prompt,
-                    temperature=0.2,
+            client = genai.Client(
+                api_key=gemini_key,
+                http_options=types.HttpOptions(
+                    timeout=10000,
+                    retry_options=types.HttpRetryOptions(attempts=1),
                 ),
             )
+            default_model = "gemini-3.8-flash"
+            model_name = os.getenv("GEMINI_MODEL", default_model).strip() or default_model
+            config = types.GenerateContentConfig(
+                system_instruction=system_prompt,
+                temperature=0.2,
+            )
+            try:
+                response = client.models.generate_content(
+                    model=model_name,
+                    contents=user_prompt,
+                    config=config,
+                )
+            except Exception as exc:
+                error_text = str(exc).lower()
+                model_unavailable = (
+                    "404" in error_text
+                    and ("not_found" in error_text or "no longer available" in error_text)
+                )
+                if model_name == default_model or not model_unavailable:
+                    raise
+                model_name = default_model
+                response = client.models.generate_content(
+                    model=model_name,
+                    contents=user_prompt,
+                    config=config,
+                )
             content = (getattr(response, "text", None) or "").strip()
             if content:
                 return content, f"Gemini ({model_name})"
-        except Exception as exc:
-            return f"{fallback_text}\n\n(Gemini note: {exc})", "Local AI Fallback"
+        except Exception:
+            logging.exception("Gemini request failed; returning the local HMS fallback")
+            return fallback_text, "Local HMS Fallback"
 
-    return fallback_text, "Local AI + HMS Fallback"
+    return fallback_text, "Local HMS Fallback"
 
 
 def _persist_patient_to_sql(
@@ -238,7 +268,7 @@ def _find_patient(pid: int):
 
 def _snapshot(status_msg: str | None = None) -> dict[str, Any]:
     patients = _collect_patients()
-    queue_list = list(getattr(hs, "queue", []))
+    queue_list = list(_get_queue())
     queue_items = [
         {"name": name, "wait": "Next Up" if idx == 1 else f"#{idx} in line"}
         for idx, name in enumerate(queue_list, start=1)
@@ -372,29 +402,31 @@ def api_add_patient(req: AddPatientReq):
 def api_book_appointment(req: BookApptReq):
     name = req.name.strip()
     hs.book_appointment(name)
-    return _snapshot(f"Book Appt: Booked appointment for {name} ({req.doctor}) | Waiting Queue: {len(hs.queue)}")
+    return _snapshot(f"Book Appt: Booked appointment for {name} ({req.doctor}) | Waiting Queue: {len(_get_queue())}")
 
 
 @app.post("/api/call-next")
 def api_call_next():
-    if not hs.queue:
+    queue = _get_queue()
+    if not queue:
         return _snapshot("Call Next Patient: No pending appointments in queue.")
-    next_patient = hs.queue[0]
+    next_patient = queue[0]
     hs.call_next()
     curr = getattr(hs, "head", None)
     while curr:
         if curr.name.lower() == next_patient.lower() and curr.id in patient_meta:
             patient_meta[curr.id]["status"] = "Completed"
         curr = curr.next
-    return _snapshot(f"Call Next Patient: Now attending {next_patient} | Remaining in queue: {len(hs.queue)}")
+    return _snapshot(f"Call Next Patient: Now attending {next_patient} | Remaining in queue: {len(_get_queue())}")
 
 
 @app.post("/api/cancel-appointment")
 def api_cancel_appointment(req: CancelApptReq):
     idx = req.index
-    if 0 <= idx < len(hs.queue):
-        removed = hs.queue[idx]
-        del hs.queue[idx]
+    queue = _get_queue()
+    if 0 <= idx < len(queue):
+        removed = queue[idx]
+        del queue[idx]
         return _snapshot(f"Cancel Appointment: Cancelled appointment for {removed}.")
     return _snapshot("Cancel Appointment: No appointment removed.")
 
@@ -532,7 +564,7 @@ def ai_appointment(req: AiAppointmentReq):
         chosen = candidates[0]
         p_label = req.patient_name.strip()
         hs.book_appointment(p_label)
-        booked_msg = f"\nBooked '{p_label}' in queue under {chosen['name']} ({chosen['field']}). Current queue size: {len(hs.queue)}."
+        booked_msg = f"\nBooked '{p_label}' in queue under {chosen['name']} ({chosen['field']}). Current queue size: {len(_get_queue())}."
 
     lines = [
         f"• {d['name']} — {d['field']} [{d['status']}] | Slots: {', '.join(d['slots'])}"

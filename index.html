@@ -727,18 +727,30 @@
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload)
       })
-        .then(function (r) { return r.ok ? r.json() : null; })
+        .then(function (r) {
+          return r.json().catch(function () { return null; }).then(function (d) {
+            if (!r.ok) {
+              var detail = d && (d.detail || d.error || d.message);
+              if (detail && typeof detail !== "string") detail = JSON.stringify(detail);
+              throw new Error("HTTP " + r.status + (detail ? ": " + detail : " " + r.statusText));
+            }
+            if (!d || typeof d !== "object") {
+              throw new Error("The AI server returned an invalid response.");
+            }
+            return d;
+          });
+        })
         .then(function (d) {
-          if (!d) {
-            setAiOutput(label, "Offline", "Start FastAPI server (`python -m uvicorn llm_server:app --port 8080`) for live AI responses.");
-            return;
-          }
           if (typeof onSuccess === "function") onSuccess(d);
           setAiOutput(d.module || label, d.engine || "AI", d.answer || "Done.");
           setOutput(d.module || label, (d.answer || "").split("\n")[0]);
         })
-        .catch(function () {
-          setAiOutput(label, "Offline", "Could not reach AI endpoint. Ensure `llm_server.py` is running.");
+        .catch(function (error) {
+          var message = error && error.message ? error.message : "Unknown request error.";
+          if (error && error.name === "TypeError") {
+            message = "Could not reach the HMS server. Start the app with `python server.py` and retry.";
+          }
+          setAiOutput(label, "Request failed", message);
         });
     }
     function runAiChatbot() {
