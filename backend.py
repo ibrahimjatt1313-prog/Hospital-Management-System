@@ -1,18 +1,20 @@
 from collections import deque
 import heapq
 class PatientNode:
-    def __init__(self, id, name, age, disease): self.id, self.name, self.age, self.disease, self.next = id, name, age, disease, None
+    def __init__(self, pid, name, age, disease):
+        self.id, self.name, self.age, self.disease, self.next = pid, name, age, disease, None
 class DoublyPatientList:
     def __init__(self): self.head = self.tail = None
-    def _n(self, id, name, age, disease): return {"id": id, "name": name, "age": age, "disease": disease, "prev": None, "next": None}
-    def add_to_tail(self, id, name, age, disease):
-        n = self._n(id, name, age, disease)
-        if not self.tail: self.head = self.tail = n
-        else: n["prev"], self.tail["next"], self.tail = self.tail, n, n
-    def add_to_head(self, id, name, age, disease):
-        n = self._n(id, name, age, disease)
+    def _node(self, pid, name, age, disease, prev=None, nxt=None):
+        return {"id": pid, "name": name, "age": age, "disease": disease, "prev": prev, "next": nxt}
+    def add_to_tail(self, pid, name, age, disease):
+        n = self._node(pid, name, age, disease, prev=self.tail)
+        self.head = self.tail = n if not self.tail else (self.tail.update({"next": n}) or self.head)
+        if self.tail is not n: self.tail["next"] = n; self.tail = n
+    def add_to_head(self, pid, name, age, disease):
+        n = self._node(pid, name, age, disease, nxt=self.head)
         if not self.head: self.head = self.tail = n
-        else: n["next"], self.head["prev"], self.head = self.head, n, n
+        else: self.head["prev"] = self.head = n
     def remove_by_id(self, pid):
         c = self.head
         while c:
@@ -24,169 +26,113 @@ class DoublyPatientList:
                 return True
             c = c["next"]
         return False
-    def _trav(self, step):
+    def traverse(self, step="next"):
         out, c = [], self.head if step == "next" else self.tail
         while c: out.append({k: c[k] for k in ("id", "name", "age", "disease")}); c = c[step]
         return out
-    def traverse_forward(self): return self._trav("next")
-    def traverse_backward(self): return self._trav("prev")
 class ActionStack:
-    def __init__(self, capacity=100): self._items, self.capacity = [], capacity
-    def push(self, element):
-        if self.is_full(): self._items.pop(0)
-        self._items.append(element)
-    def pop(self): return None if self.is_empty() else self._items.pop()
-    def top_value(self): return None if self.is_empty() else self._items[-1]
-    def is_empty(self): return len(self._items) == 0
-    def is_full(self): return len(self._items) >= self.capacity
+    def __init__(self, cap=100): self.items, self.cap = [], cap
+    def push(self, el):
+        if len(self.items) >= self.cap: self.items.pop(0)
+        self.items.append(el)
+    def pop(self): return self.items.pop() if self.items else None
+    def top(self): return self.items[-1] if self.items else None
 class CircularAppointmentQueue:
-    def __init__(self, capacity=50):
-        self.capacity, self._arr = capacity, [None] * capacity
-        self._front = self._size = 0; self._rear = -1
-    def is_empty(self): return self._size == 0
-    def is_full(self): return self._size == self.capacity
-    def enqueue(self, element):
-        if self.is_full(): return False
-        self._rear = (self._rear + 1) % self.capacity; self._arr[self._rear] = element; self._size += 1; return True
+    def __init__(self, cap=50):
+        self.cap, self.arr, self.front, self.rear, self.size = cap, [None] * cap, 0, -1, 0
+    def enqueue(self, el):
+        if self.size == self.cap: return False
+        self.rear = (self.rear + 1) % self.cap; self.arr[self.rear] = el; self.size += 1; return True
     def dequeue(self):
-        if self.is_empty(): return None
-        item, self._arr[self._front] = self._arr[self._front], None
-        self._front = (self._front + 1) % self.capacity; self._size -= 1; return item
-    def items(self): return [self._arr[(self._front + i) % self.capacity] for i in range(self._size)]
+        if not self.size: return None
+        item, self.arr[self.front] = self.arr[self.front], None
+        self.front = (self.front + 1) % self.cap; self.size -= 1; return item
 class PriorityAppointmentQueue:
-    def __init__(self): self._heap, self._counter = [], 0
+    def __init__(self): self.heap, self.c = [], 0
     def enqueue_priority(self, name, priority=5, doctor=""):
-        heapq.heappush(self._heap, (priority, self._counter, name, doctor)); self._counter += 1
-    def _fmt(self, row): return {"name": row[2], "priority": row[0], "doctor": row[3]} if row else None
-    def dequeue_priority(self): return self._fmt(heapq.heappop(self._heap)) if self._heap else None
-    def peek(self): return self._fmt(self._heap[0]) if self._heap else None
+        heapq.heappush(self.heap, (priority, self.c, name, doctor)); self.c += 1
+    def dequeue_priority(self):
+        r = heapq.heappop(self.heap) if self.heap else None
+        return {"name": r[2], "priority": r[0], "doctor": r[3]} if r else None
 class PatientBinaryTree:
     def __init__(self): self.root, self.array_view = None, []
-    def insert_level_order(self, value):
-        self.array_view.append(value)
-        node = {"val": value, "left": None, "right": None}
+    def insert_level_order(self, val):
+        self.array_view.append(val); node = {"val": val, "left": None, "right": None}
         if not self.root: self.root = node; return
         q = deque([self.root])
         while q:
             c = q.popleft()
-            for side in ("left", "right"):
-                if not c[side]: c[side] = node; return
-                q.append(c[side])
+            for s in ("left", "right"):
+                if not c[s]: c[s] = node; return
+                q.append(c[s])
 class PatientBST:
     def __init__(self): self.root = None
     def insert(self, pid, name, disease):
-        def _ins(n, pid, name, disease):
+        def _ins(n):
             if not n: return {"pid": pid, "name": name, "disease": disease, "left": None, "right": None}
-            if pid != n["pid"]: side = "left" if pid < n["pid"] else "right"; n[side] = _ins(n[side], pid, name, disease)
+            if pid != n["pid"]: s = "left" if pid < n["pid"] else "right"; n[s] = _ins(n[s])
             else: n["name"], n["disease"] = name, disease
             return n
-        self.root = _ins(self.root, pid, name, disease)
+        self.root = _ins(self.root)
     def search(self, pid):
         c = self.root
-        while c:
-            if pid == c["pid"]: return type("BSTHit", (), c)()
-            c = c["left" if pid < c["pid"] else "right"]
-        return None
-    def delete(self, pid):
-        def _del(n, pid):
-            if not n: return None, False
-            if pid != n["pid"]: side = "left" if pid < n["pid"] else "right"; n[side], d = _del(n[side], pid); return n, d
-            if not n["left"] or not n["right"]: return (n["right"] or n["left"]), True
-            s = n["right"]
-            while s["left"]: s = s["left"]
-            n["pid"], n["name"], n["disease"] = s["pid"], s["name"], s["disease"]
-            n["right"], _ = _del(n["right"], s["pid"]); return n, True
-        self.root, deleted = _del(self.root, pid); return deleted
-    def inorder(self):
-        out = []
-        def _in(n):
-            if n: _in(n["left"]); out.append({"id": n["pid"], "name": n["name"], "disease": n["disease"]}); _in(n["right"])
-        _in(self.root); return out
-class _HeapBase:
-    def __init__(self, is_min=True): self.data, self._s = [], (1 if is_min else -1)
-    def insert(self, key, value=None): self.data.append((key, value)); self._up(len(self.data) - 1)
+        while c and c["pid"] != pid: c = c["left" if pid < c["pid"] else "right"]
+        return c
+class PatientHeap:
+    def __init__(self, is_min=True): self.data, self.s = [], (1 if is_min else -1)
+    def insert(self, key, val=None):
+        self.data.append((self.s * key, key, val)); i = len(self.data) - 1
+        while i > 0 and self.data[i][0] < self.data[(i - 1) // 2][0]:
+            p = (i - 1) // 2; self.data[i], self.data[p] = self.data[p], self.data[i]; i = p
     def delete(self):
         if not self.data: return None
         top, last = self.data[0], self.data.pop()
-        if self.data: self.data[0] = last; self._down(0)
-        return {"key": top[0], "value": top[1]}
-    def _cmp(self, a, b): return (a - b) * self._s < 0
-    def _up(self, i):
-        while i > 0 and self._cmp(self.data[i][0], self.data[(i - 1) // 2][0]):
-            p = (i - 1) // 2; self.data[i], self.data[p] = self.data[p], self.data[i]; i = p
-    def _down(self, i):
-        n, best, l, r = len(self.data), i, 2 * i + 1, 2 * i + 2
-        for ch in (l, r):
-            if ch < n and self._cmp(self.data[ch][0], self.data[best][0]): best = ch
-        if best != i: self.data[i], self.data[best] = self.data[best], self.data[i]; self._down(best)
-class PatientMinHeap(_HeapBase):
-    def __init__(self): super().__init__(True)
-class PatientMaxHeap(_HeapBase):
-    def __init__(self): super().__init__(False)
+        if self.data:
+            self.data[0] = last; i, n = 0, len(self.data)
+            while True:
+                b, l, r = i, 2 * i + 1, 2 * i + 2
+                if l < n and self.data[l][0] < self.data[b][0]: b = l
+                if r < n and self.data[r][0] < self.data[b][0]: b = r
+                if b == i: break
+                self.data[i], self.data[b] = self.data[b], self.data[i]; i = b
+        return {"key": top[1], "value": top[2]}
 class PatientAVLTree:
     def __init__(self): self.root = None
     def _h(self, n): return n["h"] if n else 0
-    def _bf(self, n): return (self._h(n["left"]) - self._h(n["right"])) if n else 0
-    def _upd(self, n): n["h"] = 1 + max(self._h(n["left"]), self._h(n["right"])); return n
     def _rot(self, n, d):
         a, b = ("left", "right") if d == "r" else ("right", "left")
-        piv, mid = n[a], n[a][b]; piv[b], n[a] = n, mid; self._upd(n); self._upd(piv); return piv
-    def _bal(self, n):
-        self._upd(n); bf = self._bf(n)
-        if bf > 1:
-            if self._bf(n["left"]) < 0: n["left"] = self._rot(n["left"], "l")
-            return self._rot(n, "r")
-        if bf < -1:
-            if self._bf(n["right"]) > 0: n["right"] = self._rot(n["right"], "r")
-            return self._rot(n, "l")
-        return n
+        piv, mid = n[a], n[a][b]; piv[b], n[a] = n, mid
+        for x in (n, piv): x["h"] = 1 + max(self._h(x["left"]), self._h(x["right"]))
+        return piv
     def insert(self, pid, name):
-        def _i(n, pid, name):
+        def _i(n):
             if not n: return {"pid": pid, "name": name, "left": None, "right": None, "h": 1}
-            if pid != n["pid"]: side = "left" if pid < n["pid"] else "right"; n[side] = _i(n[side], pid, name)
+            if pid != n["pid"]: s = "left" if pid < n["pid"] else "right"; n[s] = _i(n[s])
             else: n["name"] = name; return n
-            return self._bal(n)
-        self.root = _i(self.root, pid, name)
-    def delete(self, pid):
-        def _d(n, pid):
-            if not n: return None, False
-            if pid != n["pid"]: side = "left" if pid < n["pid"] else "right"; n[side], ok = _d(n[side], pid)
-            else:
-                ok = True
-                if not n["left"] or not n["right"]: return (n["right"] or n["left"]), True
-                s = n["right"]
-                while s["left"]: s = s["left"]
-                n["pid"], n["name"] = s["pid"], s["name"]; n["right"], _ = _d(n["right"], s["pid"])
-            return (None, ok) if not n else (self._bal(n), ok)
-        self.root, deleted = _d(self.root, pid); return deleted
+            n["h"] = 1 + max(self._h(n["left"]), self._h(n["right"])); bf = self._h(n["left"]) - self._h(n["right"])
+            if bf > 1: return self._rot(n, "r") if self._h(n["left"]["left"]) >= self._h(n["left"]["right"]) else (n.update({"left": self._rot(n["left"], "l")}) or self._rot(n, "r"))
+            if bf < -1: return self._rot(n, "l") if self._h(n["right"]["right"]) >= self._h(n["right"]["left"]) else (n.update({"right": self._rot(n["right"], "r")}) or self._rot(n, "l"))
+            return n
+        self.root = _i(self.root)
 class PatientHashTable:
     def __init__(self, size=31):
-        self.size, self.buckets = size, [[] for _ in range(size)]
-        self.linear_table, self.quad_table = [None] * size, [None] * size
-    def _hash(self, key): return int(key) % self.size
-    def _probe(self, table, idx, pid, record, step_fn):
-        for step in range(self.size):
-            pos = (idx + step_fn(step)) % self.size
-            if table[pos] is None or table[pos][0] == pid: table[pos] = (pid, record); return
-    def insert(self, pid, record):
-        idx = self._hash(pid)
+        self.size, self.buckets, self.lin, self.quad = size, [[] for _ in range(size)], [None] * size, [None] * size
+    def _probe(self, tbl, idx, pid, rec, fn):
+        for s in range(self.size):
+            pos = (idx + fn(s)) % self.size
+            if tbl[pos] is None or tbl[pos][0] == pid: tbl[pos] = (pid, rec); return
+    def insert(self, pid, rec):
+        idx = int(pid) % self.size
         for item in self.buckets[idx]:
-            if item[0] == pid: item[1] = record; break
-        else: self.buckets[idx].append([pid, record])
-        self._probe(self.linear_table, idx, pid, record, lambda s: s)
-        self._probe(self.quad_table, idx, pid, record, lambda s: s * s)
-    def get(self, pid):
-        for k, v in self.buckets[self._hash(pid)]:
-            if k == pid: return v
-        return None
+            if item[0] == pid: item[1] = rec; break
+        else: self.buckets[idx].append([pid, rec])
+        self._probe(self.lin, idx, pid, rec, lambda s: s); self._probe(self.quad, idx, pid, rec, lambda s: s * s)
+    def get(self, pid): return next((v for k, v in self.buckets[int(pid) % self.size] if k == pid), None)
 class HospitalWardGraph:
-    def __init__(self): self.adj, self.weighted_adj, self.edges = {}, {}, []
-    def add_edge(self, u, v, weight=1):
-        for x, y in ((u, v), (v, u)):
-            self.adj.setdefault(x, [])
-            if y not in self.adj[x]: self.adj[x].append(y)
-            self.weighted_adj.setdefault(x, []).append((y, weight))
-        self.edges.append((weight, u, v))
+    def __init__(self): self.adj, self.edges = {}, []
+    def add_edge(self, u, v, w=1):
+        for x, y in ((u, v), (v, u)): self.adj.setdefault(x, []); self.adj[x].append(y) if y not in self.adj[x] else None
+        self.edges.append((w, u, v))
     def bfs(self, start):
         if start not in self.adj: return []
         vis, q, out = {start}, deque([start]), []
@@ -195,81 +141,48 @@ class HospitalWardGraph:
             for n in self.adj[c]:
                 if n not in vis: vis.add(n); q.append(n)
         return out
-    def dfs(self, start):
+    def dfs(self, start, vis=None, out=None):
         if start not in self.adj: return []
-        vis, out = set(), []
-        def _f(u):
-            vis.add(u); out.append(u)
-            for n in self.adj[u]:
-                if n not in vis: _f(n)
-        _f(start); return out
+        vis, out = vis if vis is not None else set(), out if out is not None else []
+        vis.add(start); out.append(start)
+        for n in self.adj[start]:
+            if n not in vis: self.dfs(n, vis, out)
+        return out
 class HospitalSystem:
     def __init__(self):
-        self.head, self.queue = None, deque()
-        self.doubly_patients, self.action_stack = DoublyPatientList(), ActionStack()
-        self.circular_queue, self.priority_queue = CircularAppointmentQueue(), PriorityAppointmentQueue()
-        self.binary_tree, self.bst = PatientBinaryTree(), PatientBST()
-        self.min_heap, self.max_heap = PatientMinHeap(), PatientMaxHeap()
-        self.avl, self.hash_index = PatientAVLTree(), PatientHashTable()
-        self.ward_graph = HospitalWardGraph()
+        self.head, self.q, self.dll, self.stack = None, deque(), DoublyPatientList(), ActionStack()
+        self.cq, self.pq, self.bt, self.bst = CircularAppointmentQueue(), PriorityAppointmentQueue(), PatientBinaryTree(), PatientBST()
+        self.min_h, self.max_h, self.avl, self.ht, self.graph = PatientHeap(True), PatientHeap(False), PatientAVLTree(), PatientHashTable(), HospitalWardGraph()
         for a, b, w in [("Reception", "OPD", 2), ("OPD", "Cardiology", 4), ("OPD", "General Medicine", 3), ("Emergency", "Cardiology", 5), ("Emergency", "Pharmacy", 2)]:
-            self.ward_graph.add_edge(a, b, weight=w)
-    def add_patient(self, id, name, age, disease):
-        node = PatientNode(id, name, age, disease)
+            self.graph.add_edge(a, b, w)
+    def add_patient(self, pid, name, age, disease):
+        node = PatientNode(pid, name, age, disease)
         if not self.head: self.head = node
         else:
             c = self.head
             while c.next: c = c.next
             c.next = node
-        self.doubly_patients.add_to_tail(id, name, age, disease); self.binary_tree.insert_level_order({"id": id, "name": name})
-        self.bst.insert(id, name, disease); self.min_heap.insert(id, name); self.max_heap.insert(age, name)
-        self.avl.insert(id, name); self.hash_index.insert(id, {"id": id, "name": name, "age": age, "disease": disease})
-        self.action_stack.push(f"ADD_PATIENT:{id}:{name}")
-    def remove_patient(self, id):
-        c, prev = self.head, None
-        while c:
-            if c.id == id:
-                if prev is None: self.head = c.next
-                else: prev.next = c.next
-                self.doubly_patients.remove_by_id(id); self.bst.delete(id); self.avl.delete(id)
-                self.action_stack.push(f"REMOVE_PATIENT:{id}"); return True
-            prev, c = c, c.next
-        return False
-    def _find_node(self, id):
+        self.dll.add_to_tail(pid, name, age, disease); self.bt.insert_level_order({"id": pid, "name": name})
+        self.bst.insert(pid, name, disease); self.min_h.insert(pid, name); self.max_h.insert(age, name)
+        self.avl.insert(pid, name); self.ht.insert(pid, {"id": pid, "name": name, "age": age, "disease": disease})
+        self.stack.push(f"ADD:{pid}:{name}")
+    def search_patient(self, pid):
         c = self.head
-        while c:
-            if c.id == id: return c
-            c = c.next
-        return None
-    def search_patient(self, id):
-        c = self._find_node(id)
-        print(f"ID: {c.id} | Name: {c.name} | Age: {c.age} | Disease: {c.disease}" if c else "Patient not found.")
-    def book_appointment(self, name): self.queue.append(name); self.circular_queue.enqueue(name); self.action_stack.push(f"BOOK_APPT:{name}")
-    def call_next(self):
-        if not self.queue: print("No pending appointments."); return
-        attended = self.queue.popleft(); self.circular_queue.dequeue(); self.action_stack.push(f"CALL_NEXT:{attended}")
+        while c and c.id != pid: c = c.next
+        print(f"ID: {c.id} | Name: {c.name} | Age: {c.age} | Disease: {c.disease}" if c else "Not found.")
+    def book_appointment(self, name): self.q.append(name); self.cq.enqueue(name); self.stack.push(f"BOOK:{name}")
+    def call_next(self): print(f"Calling: {self.cq.dequeue()}" if self.q and self.q.popleft() else "No pending appointments.")
     def display_patients(self):
-        if not self.head: print("No patient records found."); return
         c = self.head
         while c: print(f"ID: {c.id} | Name: {c.name} | Age: {c.age} | Disease: {c.disease}"); c = c.next
-    def get_sorted_patients_by_age(self):
-        arr, c = [], self.head
-        while c: arr.append({"id": c.id, "name": c.name, "age": c.age, "disease": c.disease}); c = c.next
-        for i in range(1, len(arr)):
-            key, j = arr[i], i - 1
-            while j >= 0 and arr[j]["age"] > key["age"]: arr[j + 1] = arr[j]; j -= 1
-            arr[j + 1] = key
-        return arr
+        if not self.head: print("No patient records found.")
 def main():
     hs = HospitalSystem()
-    while True:
-        print("\n--- Hospital Management System ---\n 1.Add Patient\n 2.Search Patient\n 3.Book Appointment\n 4.Call Next Patient\n 5.Display All\n 6.Exit")
-        ch = input("Enter choice: ")
+    while (ch := input("\n--- Hospital Management System ---\n1.Add Patient \n2.Search Patient \n3.Book Appointement \n4.Next Call Patient \n5.Display All Patient \n6.Exit\nChoice: ")) != "6":
         if ch == "1": hs.add_patient(int(input("ID: ")), input("Name: "), int(input("Age: ")), input("Disease: "))
-        elif ch == "2": hs.search_patient(int(input("ID:")))
-        elif ch == "3": hs.book_appointment(input("Name:"))
+        elif ch == "2": hs.search_patient(int(input("ID: ")))
+        elif ch == "3": hs.book_appointment(input("Name: "))
         elif ch == "4": hs.call_next()
         elif ch == "5": hs.display_patients()
-        elif ch == "6": break
         else: print("Invalid choice.")
 if __name__ == "__main__": main()
