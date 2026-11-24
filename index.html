@@ -27,12 +27,15 @@
           <h2>1. Add Patient</h2>
           <label for="inpId">Patient ID</label>
           <input id="inpId" type="number" placeholder="Enter ID (e.g. 1)" />
+          <div id="idErrorMsg" class="field-error-text" role="alert">Only number allowed</div>
           <label for="inpName">Patient Name</label>
           <input id="inpName" type="text" placeholder="Enter Patient Name" />
+          <div id="nameErrorMsg" class="field-error-text" role="alert">Only put alphabetic not numeric value</div>
           <div class="row-2">
             <div>
               <label for="inpAge">Age</label>
               <input id="inpAge" type="number" placeholder="Age" />
+              <div id="ageErrorMsg" class="field-error-text" role="alert">Only number allowed</div>
             </div>
             <div>
               <label for="inpRate">Address</label>
@@ -41,6 +44,7 @@
           </div>
           <label for="inpDisease">Disease / Medical Field</label>
           <input id="inpDisease" type="text" placeholder="e.g. Fever" />
+          <div id="diseaseErrorMsg" class="field-error-text" role="alert">Invalid</div>
           <label for="selDoctor">Assign Doctor &amp; Field</label>
           <select id="selDoctor">
             <option value="Dr. Ibrahim Ashraf — General Medicine">Dr. Ibrahim Ashraf — General Medicine</option>
@@ -48,7 +52,7 @@
             <option value="Dr. Abubakar Naveed — Orthopedics">Dr. Abubakar Naveed — Orthopedics</option>
             <option value="Dr. Bisma Iqbal — Pediatrics">Dr. Bisma Iqbal — Pediatrics</option>
             <option value="Dr. Aibtasam Ali — Neurology">Dr. Aibtasam Ali — Neurology</option>
-            <option value="Dr. Ibrahim Ali — ENT &amp; Dermatology">Dr. Ibrahim Ali — ENT &amp; Dermatology</option>
+            <option value="Dr. Ibrahim Ali — ENT & Dermatology">Dr. Ibrahim Ali — ENT & Dermatology</option>
           </select>
           <button id="btnAddPatient" class="action-btn btn-success" type="button" onclick="addPatientNow()">
             Add Patient
@@ -57,6 +61,7 @@
         <div class="panel-box appt-compact">
           <h2>2. Appointment</h2>
           <input id="inpApptName" list="patientNameList" type="text" placeholder="Patient or Type Name..." />
+          <div id="apptErrorMsg" class="field-error-text" role="alert">Invalid</div>
           <datalist id="patientNameList"></datalist>
           <select id="selApptDoctor" class="mt-6">
             <option value="Dr. Ibrahim Ashraf — General Medicine">Dr. Ibrahim Ashraf — General Medicine</option>
@@ -64,7 +69,7 @@
             <option value="Dr. Abubakar Naveed — Orthopedics">Dr. Abubakar Naveed — Orthopedics</option>
             <option value="Dr. Bisma Iqbal — Pediatrics">Dr. Bisma Iqbal — Pediatrics</option>
             <option value="Dr. Aibtasam Ali — Neurology">Dr. Aibtasam Ali — Neurology</option>
-            <option value="Dr. Ibrahim Ali — ENT &amp; Dermatology">Dr. Ibrahim Ali — ENT &amp; Dermatology</option>
+            <option value="Dr. Ibrahim Ali — ENT & Dermatology">Dr. Ibrahim Ali — ENT & Dermatology</option>
           </select>
           <div class="row-2 btn-row-compact">
             <button id="btnBookAppt" class="action-btn btn-primary" type="button" onclick="bookApptNow()">
@@ -86,6 +91,7 @@
               </svg>
             </button>
           </div>
+          <div id="searchErrorMsg" class="field-error-text" role="alert">Only number allowed</div>
           <div class="row-2 search-btn-row">
             <button id="btnSearchPatient" class="action-btn btn-dark" type="button" onclick="searchPatientNow()">
               Search Patient
@@ -93,6 +99,25 @@
             <button id="btnClearSearch" class="action-btn btn-secondary-soft" type="button" onclick="clearSearchNow()">
               Clear
             </button>
+          </div>
+        </div>
+        <div class="panel-box sidebar-notes-box">
+          <h2>4. Shift &amp; Triage Desk</h2>
+          <div class="desk-note-item">
+            <span class="desk-note-label">OPD Timings</span>
+            <span class="desk-note-val">08:00 AM – 10:00 PM</span>
+          </div>
+          <div class="desk-note-item">
+            <span class="desk-note-label">Emergency Triage</span>
+            <span class="desk-note-val">Priority 1–2 Immediate</span>
+          </div>
+          <div class="desk-note-item">
+            <span class="desk-note-label">Active Shift</span>
+            <span class="desk-note-val">Day / Evening OPD</span>
+          </div>
+          <div class="desk-note-item">
+            <span class="desk-note-label">Rx &amp; Records</span>
+            <span class="desk-note-val">Click Any Table Row</span>
           </div>
         </div>
       </aside>
@@ -232,6 +257,7 @@
                 <input id="inpChatQuestion" type="text" placeholder="e.g. What are OPD timings and chest pain triage rules?" />
                 <button type="button" class="action-btn btn-primary btn-compact" onclick="runAiChatbot()">Ask AI Bot</button>
               </div>
+              <div id="aiChatErrorMsg" class="field-error-text" role="alert">Invalid</div>
             </div>
 
             <div id="aiPane-02" class="ai-pane">
@@ -245,7 +271,7 @@
               </div>
             </div>
 
-            <div id="aiPane-03" class="ai-pane">
+            <div id="aiPane-03" class="ai-pane ai-pane-fixed">
               <label for="txtMedicalReport">03 AI Medical Report Summarizer — Clear Report Overview</label>
               <div id="quickPrompts-03" class="quick-prompts"></div>
               <textarea id="txtMedicalReport" rows="2" class="ai-textarea" placeholder="Paste lab report, discharge notes, or diagnostic findings here..."></textarea>
@@ -253,6 +279,7 @@
                 <input id="inpReportPatient" type="text" placeholder="Patient name (optional)" />
                 <button type="button" class="action-btn btn-primary btn-compact" onclick="runAiReportSummary()">Summarize Report</button>
               </div>
+              <div id="aiReportErrorMsg" class="field-error-text" role="alert">Invalid</div>
             </div>
 
             <div id="aiPane-04" class="ai-pane">
@@ -263,6 +290,7 @@
                 <input id="inpDocAssistNote" type="text" placeholder="Clinical question or focus (optional)" />
                 <button type="button" class="action-btn btn-primary btn-compact" onclick="runAiDoctorAssistant()">Get Patient Brief</button>
               </div>
+              <div id="aiDocErrorMsg" class="field-error-text" role="alert">Invalid</div>
             </div>
 
             <div id="aiPane-05" class="ai-pane">
@@ -274,7 +302,7 @@
               </div>
             </div>
 
-            <div id="aiPane-06" class="ai-pane">
+            <div id="aiPane-06" class="ai-pane ai-pane-fixed">
               <label>06 Clinical Operations Tools — Urgent Care, Lookup, Records &amp; Ward Flow</label>
               <div class="ai-inline-row">
                 <input id="inpDsPriorityName" type="text" placeholder="Emergency Patient Name" />
@@ -286,6 +314,7 @@
                 <button type="button" class="action-btn btn-success btn-compact" onclick="runDsPriorityBook()">Add Urgent</button>
                 <button type="button" class="action-btn btn-dark btn-compact" onclick="runDsPriorityCall()">Call Urgent</button>
               </div>
+              <div id="dsUrgentErrorMsg" class="field-error-text" role="alert">Invalid</div>
               <div class="ai-inline-row mt-6">
                 <input id="inpDsLookupId" type="number" placeholder="Patient ID Lookup" />
                 <button type="button" class="action-btn btn-primary btn-compact" onclick="runDsBstLookup()">Find By ID</button>
@@ -294,6 +323,7 @@
                 <button type="button" class="action-btn ds-dark-pill btn-compact" onclick="runDsStackTop()">Recent Action</button>
                 <button type="button" class="action-btn ds-dark-pill btn-compact" onclick="runDsWardGraph()">Ward Flow</button>
               </div>
+              <div id="dsLookupErrorMsg" class="field-error-text" role="alert">Invalid</div>
               <div class="ai-inline-row mt-6">
                 <button type="button" class="action-btn btn-primary btn-compact" onclick="renderBstTreeVisual()">Patient Map View</button>
                 <button type="button" class="action-btn btn-success btn-compact" onclick="renderWardGraphVisual()">Ward Network View</button>
@@ -609,7 +639,7 @@
         parts.push("</g>");
       });
       return (
-        '<svg class="ds-svg" viewBox="0 0 710 240" width="100%" height="240" role="img" aria-label="Hospital Ward Network Diagram">' +
+        '<svg class="ds-svg" viewBox="0 0 710 240" height="185" role="img" aria-label="Hospital Ward Network Diagram">' +
         parts.join("") +
         "</svg>"
       );
@@ -1275,6 +1305,202 @@
     setInterval(updateClock, 30000);
     renderQuickPromptsForTab("01");
     refreshAll();
+  </script>
+
+  <script>
+    (function addNonDestructiveValidationEnhancements() {
+      var ALPHA_ONLY_MSG = "Only put alphabetic not numeric value";
+      var NUM_ONLY_MSG = "Only number allowed";
+
+      function capFirst(str) {
+        var s = String(str || "Invalid");
+        return s.charAt(0).toUpperCase() + s.slice(1);
+      }
+
+      function showErr(errId, msg, inpId, ms) {
+        var errEl = document.getElementById(errId);
+        var inpEl = inpId ? document.getElementById(inpId) : null;
+        if (errEl) {
+          errEl.textContent = capFirst(msg || "Invalid");
+          errEl.classList.add("show");
+          if (errEl._t) {
+            clearTimeout(errEl._t);
+            errEl._t = null;
+          }
+          if (ms && ms > 0) {
+            errEl._t = setTimeout(function () {
+              errEl.classList.remove("show");
+            }, ms);
+          }
+        }
+        if (inpEl) inpEl.classList.add("input-invalid");
+      }
+
+      function hideErr(errId, inpId) {
+        var errEl = document.getElementById(errId);
+        var inpEl = inpId ? document.getElementById(inpId) : null;
+        if (errEl) {
+          errEl.classList.remove("show");
+          if (errEl._t) {
+            clearTimeout(errEl._t);
+            errEl._t = null;
+          }
+        }
+        if (inpEl) inpEl.classList.remove("input-invalid");
+      }
+
+      function attachOnlyNumberRule(inpId, errId, msg) {
+        var inp = document.getElementById(inpId);
+        if (!inp) return;
+        inp.addEventListener("keydown", function (e) {
+          if (e.ctrlKey || e.metaKey || e.altKey) return;
+          var allowed = [
+            "Backspace", "Delete", "Tab", "Escape", "Enter",
+            "ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown", "Home", "End"
+          ];
+          if (allowed.indexOf(e.key) !== -1) return;
+          if (!/^[0-9]$/.test(e.key)) {
+            e.preventDefault();
+            showErr(errId, msg || NUM_ONLY_MSG, inpId, 2000);
+          } else {
+            hideErr(errId, inpId);
+          }
+        });
+        inp.addEventListener("paste", function (e) {
+          var txt = (e.clipboardData || window.clipboardData).getData("text") || "";
+          if (!/^[0-9]+$/.test(txt.trim())) {
+            e.preventDefault();
+            showErr(errId, msg || NUM_ONLY_MSG, inpId, 2000);
+          } else {
+            hideErr(errId, inpId);
+          }
+        });
+        inp.addEventListener("input", function () {
+          if (/^[0-9]*$/.test(inp.value)) {
+            hideErr(errId, inpId);
+          } else {
+            inp.value = inp.value.replace(/[^0-9]/g, "");
+            showErr(errId, msg || NUM_ONLY_MSG, inpId, 2000);
+          }
+        });
+        inp.addEventListener("blur", function () {
+          hideErr(errId, inpId);
+        });
+      }
+
+      function attachOnlyAlphaRule(inpId, errId, msg) {
+        var inp = document.getElementById(inpId);
+        if (!inp) return;
+        var errText = capFirst(msg || ALPHA_ONLY_MSG);
+        inp.addEventListener("keydown", function (e) {
+          if (e.ctrlKey || e.metaKey || e.altKey) return;
+          var allowed = [
+            "Backspace", "Delete", "Tab", "Escape", "Enter", " ",
+            "ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown", "Home", "End"
+          ];
+          if (allowed.indexOf(e.key) !== -1) return;
+          if (!/^[A-Za-z]$/.test(e.key)) {
+            e.preventDefault();
+            showErr(errId, errText, inpId, 2200);
+          } else {
+            hideErr(errId, inpId);
+          }
+        });
+        inp.addEventListener("paste", function (e) {
+          var txt = (e.clipboardData || window.clipboardData).getData("text") || "";
+          if (!/^[A-Za-z ]+$/.test(txt.trim())) {
+            e.preventDefault();
+            showErr(errId, errText, inpId, 2200);
+          } else {
+            hideErr(errId, inpId);
+          }
+        });
+        inp.addEventListener("input", function () {
+          if (/^[A-Za-z ]*$/.test(inp.value)) {
+            hideErr(errId, inpId);
+          } else {
+            inp.value = inp.value.replace(/[^A-Za-z ]/g, "");
+            showErr(errId, errText, inpId, 2200);
+          }
+        });
+        inp.addEventListener("blur", function () {
+          hideErr(errId, inpId);
+        });
+      }
+
+      attachOnlyNumberRule("inpId", "idErrorMsg", NUM_ONLY_MSG);
+      attachOnlyAlphaRule("inpName", "nameErrorMsg", ALPHA_ONLY_MSG);
+      attachOnlyNumberRule("inpAge", "ageErrorMsg", NUM_ONLY_MSG);
+      attachOnlyNumberRule("inpSearchId", "searchErrorMsg", NUM_ONLY_MSG);
+      attachOnlyNumberRule("inpDocAssistPid", "aiDocErrorMsg", NUM_ONLY_MSG);
+      attachOnlyNumberRule("inpDsLookupId", "dsLookupErrorMsg", NUM_ONLY_MSG);
+
+      var origAdd = window.addPatientNow;
+      if (typeof origAdd === "function") {
+        window.addPatientNow = function () {
+          hideErr("idErrorMsg", "inpId");
+          hideErr("nameErrorMsg", "inpName");
+          hideErr("ageErrorMsg", "inpAge");
+          hideErr("diseaseErrorMsg", "inpDisease");
+
+          var idVal = (document.getElementById("inpId") || {}).value ? document.getElementById("inpId").value.trim() : "";
+          var nameVal = (document.getElementById("inpName") || {}).value ? document.getElementById("inpName").value.trim() : "";
+          var ageVal = (document.getElementById("inpAge") || {}).value ? document.getElementById("inpAge").value.trim() : "";
+          var diseaseVal = (document.getElementById("inpDisease") || {}).value ? document.getElementById("inpDisease").value.trim() : "";
+
+          var bad = false;
+          if (!idVal || !/^[0-9]+$/.test(idVal) || parseInt(idVal, 10) <= 0) {
+            showErr("idErrorMsg", NUM_ONLY_MSG, "inpId", 0);
+            bad = true;
+          }
+          if (!nameVal || !/^[A-Za-z ]+$/.test(nameVal)) {
+            showErr("nameErrorMsg", ALPHA_ONLY_MSG, "inpName", 0);
+            bad = true;
+          }
+          if (!ageVal || !/^[0-9]+$/.test(ageVal) || parseInt(ageVal, 10) < 0 || parseInt(ageVal, 10) > 130) {
+            showErr("ageErrorMsg", NUM_ONLY_MSG, "inpAge", 0);
+            bad = true;
+          }
+          if (!diseaseVal) {
+            showErr("diseaseErrorMsg", "Invalid", "inpDisease", 0);
+            bad = true;
+          }
+          if (bad) {
+            setOutput("Add Patient", "Invalid — Please check the highlighted fields.");
+            return;
+          }
+          return origAdd.apply(this, arguments);
+        };
+      }
+
+      var origBook = window.bookApptNow;
+      if (typeof origBook === "function") {
+        window.bookApptNow = function () {
+          hideErr("apptErrorMsg", "inpApptName");
+          var n = (document.getElementById("inpApptName") || {}).value ? document.getElementById("inpApptName").value.trim() : "";
+          if (!n) {
+            showErr("apptErrorMsg", "Invalid", "inpApptName", 0);
+            setOutput("Book Appt", "Invalid — Please enter a patient name.");
+            return;
+          }
+          return origBook.apply(this, arguments);
+        };
+      }
+
+      var origSearch = window.searchPatientNow;
+      if (typeof origSearch === "function") {
+        window.searchPatientNow = function () {
+          hideErr("searchErrorMsg", "inpSearchId");
+          var s = (document.getElementById("inpSearchId") || {}).value ? document.getElementById("inpSearchId").value.trim() : "";
+          if (!s || !/^[0-9]+$/.test(s) || parseInt(s, 10) <= 0) {
+            showErr("searchErrorMsg", NUM_ONLY_MSG, "inpSearchId", 0);
+            setOutput("Search Patient", "Invalid — Please enter a valid Patient ID.");
+            return;
+          }
+          return origSearch.apply(this, arguments);
+        };
+      }
+    })();
   </script>
 </body>
 </html>

@@ -344,4 +344,329 @@
   } else {
     init();
   }
+
 })();
+(function setupAgeNumberOnlyNotice() {
+      var ageInput = document.getElementById("inpAge");
+      var ageError = document.getElementById("ageErrorMsg");
+      if (!ageInput || !ageError) return;
+
+      var hideTimer = null;
+
+      function showOnlyNumberAllowed() {
+        ageError.classList.add("show");
+        if (hideTimer) clearTimeout(hideTimer);
+        hideTimer = setTimeout(function () {
+          ageError.classList.remove("show");
+        }, 2000);
+      }
+
+      function hideOnlyNumberAllowed() {
+        ageError.classList.remove("show");
+        if (hideTimer) {
+          clearTimeout(hideTimer);
+          hideTimer = null;
+        }
+      }
+
+      ageInput.addEventListener("keydown", function (e) {
+        if (e.ctrlKey || e.metaKey || e.altKey) return;
+        var controlKeys = [
+          "Backspace", "Delete", "Tab", "Escape", "Enter",
+          "ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown", "Home", "End"
+        ];
+        if (controlKeys.indexOf(e.key) !== -1) return;
+
+        if (!/^[0-9]$/.test(e.key)) {
+          e.preventDefault();
+          showOnlyNumberAllowed();
+        } else {
+          hideOnlyNumberAllowed();
+        }
+      });
+
+      ageInput.addEventListener("paste", function (e) {
+        var pasted = (e.clipboardData || window.clipboardData).getData("text") || "";
+        if (!/^[0-9]+$/.test(pasted.trim())) {
+          e.preventDefault();
+          showOnlyNumberAllowed();
+        } else {
+          hideOnlyNumberAllowed();
+        }
+      });
+
+      ageInput.addEventListener("input", function () {
+        if (/^[0-9]*$/.test(ageInput.value)) {
+          hideOnlyNumberAllowed();
+        } else {
+          ageInput.value = ageInput.value.replace(/[^0-9]/g, "");
+          showOnlyNumberAllowed();
+        }
+      });
+
+      ageInput.addEventListener("blur", hideOnlyNumberAllowed);
+    })();
+
+(function setupPatientIdAndNameValidationNotice() {
+  var idInput = document.getElementById("inpId");
+  var idError = document.getElementById("idErrorMsg");
+  var nameInput = document.getElementById("inpName");
+  var nameError = document.getElementById("nameErrorMsg");
+
+  function bindNotice(inputEl, errorEl, matcher, sanitizer, msg, ms) {
+    if (!inputEl || !errorEl) return;
+    var timer = null;
+    function show() {
+      errorEl.textContent = msg;
+      errorEl.classList.add("show");
+      inputEl.classList.add("input-invalid");
+      if (timer) clearTimeout(timer);
+      timer = setTimeout(function () {
+        errorEl.classList.remove("show");
+      }, ms || 2200);
+    }
+    function hide() {
+      errorEl.classList.remove("show");
+      inputEl.classList.remove("input-invalid");
+      if (timer) {
+        clearTimeout(timer);
+        timer = null;
+      }
+    }
+    inputEl.addEventListener("keydown", function (e) {
+      if (e.ctrlKey || e.metaKey || e.altKey) return;
+      var navKeys = [
+        "Backspace", "Delete", "Tab", "Escape", "Enter",
+        "ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown", "Home", "End"
+      ];
+      if (navKeys.indexOf(e.key) !== -1) return;
+      if (!matcher.test(e.key)) {
+        e.preventDefault();
+        show();
+      } else {
+        hide();
+      }
+    });
+    inputEl.addEventListener("paste", function (e) {
+      var pasted = ((e.clipboardData || window.clipboardData).getData("text") || "").trim();
+      if (!pasted || !sanitizer(pasted)) {
+        e.preventDefault();
+        show();
+      } else {
+        hide();
+      }
+    });
+    inputEl.addEventListener("input", function () {
+      if (sanitizer(inputEl.value)) {
+        hide();
+      } else {
+        inputEl.value = inputEl.value.replace(new RegExp(matcher.source.replace(/^\^|\$$/g, ""), "g"), "");
+        show();
+      }
+    });
+    inputEl.addEventListener("blur", hide);
+  }
+
+  bindNotice(
+    idInput,
+    idError,
+    /^[0-9]$/,
+    function (v) { return /^[0-9]*$/.test(v); },
+    "Only number allowed",
+    2000
+  );
+
+  bindNotice(
+    nameInput,
+    nameError,
+    /^[A-Za-z ]$/,
+    function (v) { return /^[A-Za-z ]*$/.test(v); },
+    "Only put alphabetic not numeric value",
+    2200
+  );
+})();
+(function setupAuthGate() {
+    var AUTH_USERS_KEY = "hms_auth_users_v1";
+    var AUTH_SESSION_KEY = "hms_auth_session_v1";
+
+    function loadUsers() {
+      var defaults = [
+        {
+          name: "HMS Administrator",
+          identifier: "admin@hms.local",
+          username: "admin",
+          password: "password123"
+        }
+      ];
+      try {
+        var raw = localStorage.getItem(AUTH_USERS_KEY);
+        if (!raw) return defaults;
+        var parsed = JSON.parse(raw);
+        return Array.isArray(parsed) && parsed.length ? parsed : defaults;
+      } catch (e) {
+        return defaults;
+      }
+    }
+
+    function saveUsers(users) {
+      try {
+        localStorage.setItem(AUTH_USERS_KEY, JSON.stringify(users));
+      } catch (e) {}
+    }
+
+    function getSession() {
+      try {
+        var raw = localStorage.getItem(AUTH_SESSION_KEY);
+        return raw ? JSON.parse(raw) : null;
+      } catch (e) {
+        return null;
+      }
+    }
+
+    function setSession(user) {
+      try {
+        if (user) {
+          localStorage.setItem(AUTH_SESSION_KEY, JSON.stringify(user));
+        } else {
+          localStorage.removeItem(AUTH_SESSION_KEY);
+        }
+      } catch (e) {}
+    }
+
+    function setAuthError(elId, msg) {
+      var el = document.getElementById(elId);
+      if (!el) return;
+      el.textContent = msg;
+      el.classList.add("show");
+    }
+
+    function clearAuthError(elId) {
+      var el = document.getElementById(elId);
+      if (!el) return;
+      el.classList.remove("show");
+    }
+
+    function syncAuthUI() {
+      var session = getSession();
+      var badge = document.getElementById("activeUserBadge");
+      var logoutBtn = document.getElementById("btnLogout");
+      if (session && (session.name || session.identifier)) {
+        document.body.classList.remove("auth-locked");
+        if (badge) {
+          badge.textContent = session.name || session.identifier;
+          badge.style.display = "inline-flex";
+        }
+        if (logoutBtn) {
+          logoutBtn.style.display = "inline-flex";
+        }
+      } else {
+        document.body.classList.add("auth-locked");
+        if (badge) badge.style.display = "none";
+        if (logoutBtn) logoutBtn.style.display = "none";
+      }
+    }
+
+    window.switchAuthMode = function (mode) {
+      var isSignUp = mode === "signup";
+      document.getElementById("tabSignIn").classList.toggle("active", !isSignUp);
+      document.getElementById("tabSignUp").classList.toggle("active", isSignUp);
+      document.getElementById("formSignIn").classList.toggle("active", !isSignUp);
+      document.getElementById("formSignUp").classList.toggle("active", isSignUp);
+      clearAuthError("loginErrorMsg");
+      clearAuthError("signupErrorMsg");
+    };
+
+    window.handleSignIn = function (event) {
+      if (event) event.preventDefault();
+      clearAuthError("loginErrorMsg");
+      var idInput = document.getElementById("loginEmail").value.trim().toLowerCase();
+      var passInput = document.getElementById("loginPassword").value;
+      if (!idInput || !passInput) {
+        setAuthError("loginErrorMsg", "Please enter email/username and password");
+        return;
+      }
+      var users = loadUsers();
+      var matched = users.find(function (u) {
+        var uId = String(u.identifier || "").toLowerCase();
+        var uName = String(u.username || "").toLowerCase();
+        return (uId === idInput || uName === idInput) && u.password === passInput;
+      });
+      if (!matched) {
+        setAuthError("loginErrorMsg", "Invalid credentials (Default: admin@hms.local / password123)");
+        return;
+      }
+      setSession({ name: matched.name, identifier: matched.identifier });
+      document.getElementById("loginPassword").value = "";
+      syncAuthUI();
+      setOutput("Signed In", "Welcome, " + matched.name);
+    };
+
+    window.handleSignUp = function (event) {
+      if (event) event.preventDefault();
+      clearAuthError("signupErrorMsg");
+      var nameVal = document.getElementById("signupName").value.trim();
+      var emailVal = document.getElementById("signupEmail").value.trim();
+      var passVal = document.getElementById("signupPassword").value;
+      if (!nameVal || !/^[A-Za-z ]+$/.test(nameVal)) {
+        setAuthError("signupErrorMsg", "Only put alphabetic not numeric value");
+        return;
+      }
+      if (!emailVal) {
+        setAuthError("signupErrorMsg", "Please enter email or username");
+        return;
+      }
+      if (!passVal || passVal.length < 6) {
+        setAuthError("signupErrorMsg", "Password must be at least 6 characters");
+        return;
+      }
+      var users = loadUsers();
+      var duplicate = users.some(function (u) {
+        return String(u.identifier || "").toLowerCase() === emailVal.toLowerCase();
+      });
+      if (duplicate) {
+        setAuthError("signupErrorMsg", "Account with this email/username already exists");
+        return;
+      }
+      var newUser = {
+        name: nameVal,
+        identifier: emailVal,
+        username: emailVal.split("@")[0],
+        password: passVal
+      };
+      users.push(newUser);
+      saveUsers(users);
+      setSession({ name: newUser.name, identifier: newUser.identifier });
+      document.getElementById("signupPassword").value = "";
+      syncAuthUI();
+      setOutput("Account Created", "Signed in as " + newUser.name);
+    };
+
+    window.logoutNow = function () {
+      setSession(null);
+      syncAuthUI();
+      window.switchAuthMode("signin");
+    };
+
+    // Block any global function call if user is not signed in
+    var guardedFns = [
+      "addPatientNow", "bookApptNow", "callNextNow", "cancelApptNow",
+      "searchPatientNow", "clearSearchNow", "runAiChatbot", "runAiAppointment",
+      "runAiReportSummary", "runAiDoctorAssistant", "runAiAnalytics",
+      "runDsPriorityBook", "runDsPriorityCall", "runDsBstLookup",
+      "runDsHashLookup", "runDsSortByAge", "runDsStackTop", "runDsWardGraph"
+    ];
+    guardedFns.forEach(function (fnName) {
+      var orig = window[fnName];
+      if (typeof orig === "function") {
+        window[fnName] = function () {
+          if (!getSession()) {
+            syncAuthUI();
+            return;
+          }
+          return orig.apply(this, arguments);
+        };
+      }
+    });
+
+    syncAuthUI();
+  })();
