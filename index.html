@@ -14,6 +14,9 @@
         <p class="subtext">Patients, Appointments &amp; AI Clinical Suite</p>
       </div>
       <div class="header-meta">
+        <button id="btnAuthOpen" class="theme-toggle-btn" type="button" onclick="openAuthModal()">
+          Patient Portal Required
+        </button>
         <button id="btnThemeToggle" class="theme-toggle-btn" type="button" onclick="toggleThemeNow()" aria-label="Switch Theme">
           Theme
         </button>
@@ -387,6 +390,49 @@
           <button type="button" class="btn-close-rx" onclick="closeRxModal()">Close</button>
         </div>
       </div>
+    </div>
+  </div>
+
+  <div id="authModal" class="rx-modal-backdrop" onclick="closeAuthModal(event)">
+    <div class="rx-modal-card auth-modal-card" role="dialog" aria-modal="true" aria-labelledby="authModalTitle">
+      <div class="rx-header">
+        <div>
+          <h2 id="authModalTitle">Patient Account Check</h2>
+          <p class="rx-sub">Sign Up required before Sign In</p>
+        </div>
+        <button type="button" class="btn-close-rx" onclick="closeAuthModal()">✕</button>
+      </div>
+
+      <div class="auth-switch-tabs">
+        <button type="button" id="tabSignIn" class="ai-tab-btn" onclick="switchAuthMode('signin')">Sign In</button>
+        <button type="button" id="tabSignUp" class="ai-tab-btn active" onclick="switchAuthMode('signup')">Sign Up</button>
+      </div>
+
+      <form id="authForm" class="auth-form" onsubmit="submitAuthForm(event)">
+        <div id="authNameGroup" class="auth-field">
+          <label for="authFullName">Patient Full Name</label>
+          <input id="authFullName" type="text" placeholder="Enter Patient Full Name" />
+        </div>
+
+        <div class="auth-field">
+          <label for="authEmail">Patient Email or Username</label>
+          <input id="authEmail" type="text" required placeholder="Enter Email or Username" onblur="checkPatientSignupStatus()" />
+        </div>
+
+        <div class="auth-field">
+          <label for="authPassword">Password</label>
+          <input id="authPassword" type="password" required minlength="4" placeholder="Enter Password (min 4 chars)" />
+        </div>
+
+        <div id="authFeedback" class="auth-feedback" role="status"></div>
+
+        <div class="auth-actions">
+          <button id="btnAuthSubmit" type="submit" class="action-btn btn-primary">Sign Up as Patient</button>
+          <button id="btnAuthLogout" type="button" class="action-btn btn-dark" style="display: none;" onclick="logoutCurrentUser()">
+            Sign Out
+          </button>
+        </div>
+      </form>
     </div>
   </div>
 
@@ -1305,6 +1351,391 @@
     setInterval(updateClock, 30000);
     renderQuickPromptsForTab("01");
     refreshAll();
+  </script>
+
+  <script>
+    (function patientSignupFirstFlow() {
+      var AUTH_STORAGE_KEY = "hms_patient_session";
+      var PATIENTS_ACCOUNTS_KEY = "hms_registered_patients";
+      var authMode = "signup";
+
+      function getCurrentSession() {
+        try {
+          var raw = localStorage.getItem(AUTH_STORAGE_KEY);
+          if (!raw) return null;
+          var parsed = JSON.parse(raw);
+          if (!parsed || !parsed.email || !parsed.name) return null;
+          var match = findRegisteredPatient(parsed.email);
+          if (!match || match.name.toLowerCase() !== String(parsed.name).toLowerCase()) {
+            return null;
+          }
+          return parsed;
+        } catch (e) {
+          return null;
+        }
+      }
+
+      function saveCurrentSession(sessionObj) {
+        try {
+          if (sessionObj) {
+            localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(sessionObj));
+          } else {
+            localStorage.removeItem(AUTH_STORAGE_KEY);
+          }
+        } catch (e) {}
+        syncPatientAuthUi();
+      }
+
+      function getRegisteredPatients() {
+        try {
+          var raw = localStorage.getItem(PATIENTS_ACCOUNTS_KEY);
+          var arr = raw ? JSON.parse(raw) : [];
+          return Array.isArray(arr) ? arr : [];
+        } catch (e) {
+          return [];
+        }
+      }
+
+      function saveRegisteredPatients(list) {
+        try {
+          localStorage.setItem(PATIENTS_ACCOUNTS_KEY, JSON.stringify(list));
+        } catch (e) {}
+      }
+
+      function findRegisteredPatient(emailOrUser) {
+        var key = String(emailOrUser || "").trim().toLowerCase();
+        if (!key) return null;
+        return getRegisteredPatients().find(function (u) {
+          return String(u.email || "").trim().toLowerCase() === key;
+        }) || null;
+      }
+
+      function setAuthFeedback(msg, isError) {
+        var fb = document.getElementById("authFeedback");
+        if (!fb) return;
+        fb.textContent = msg || "";
+        fb.className = "auth-feedback" + (msg ? (isError ? " is-error" : " is-success") : "");
+      }
+
+      window.switchAuthMode = function (mode) {
+        var hasAccounts = getRegisteredPatients().length > 0;
+        if (mode === "signin" && !hasAccounts) {
+          authMode = "signup";
+          syncAuthModeUi("signup");
+          setAuthFeedback("No patient account has signed up yet. Please Sign Up first.", true);
+          return;
+        }
+        authMode = mode === "signin" ? "signin" : "signup";
+        syncAuthModeUi(authMode);
+        setAuthFeedback("", false);
+      };
+
+      function syncAuthModeUi(activeMode) {
+        var isSignup = activeMode === "signup";
+        var tabIn = document.getElementById("tabSignIn");
+        var tabUp = document.getElementById("tabSignUp");
+        var nameGrp = document.getElementById("authNameGroup");
+        var nameInp = document.getElementById("authFullName");
+        var submitBtn = document.getElementById("btnAuthSubmit");
+        var titleEl = document.getElementById("authModalTitle");
+
+        if (tabIn) tabIn.classList.toggle("active", !isSignup);
+        if (tabUp) tabUp.classList.toggle("active", isSignup);
+        if (nameGrp) nameGrp.style.display = "block";
+        if (nameInp) nameInp.required = isSignup;
+        if (submitBtn) submitBtn.textContent = isSignup ? "Sign Up as Patient" : "Sign In as Patient";
+        if (titleEl) titleEl.textContent = isSignup ? "Patient Sign Up" : "Patient Sign In";
+      }
+
+      window.checkPatientSignupStatus = function () {
+        var emailEl = document.getElementById("authEmail");
+        var nameEl = document.getElementById("authFullName");
+        if (!emailEl) return;
+
+        var val = emailEl.value.trim();
+        var enteredName = nameEl ? nameEl.value.trim() : "";
+        var allAccounts = getRegisteredPatients();
+
+        if (!allAccounts.length) {
+          authMode = "signup";
+          syncAuthModeUi("signup");
+          setAuthFeedback("No patient account found yet. Please Sign Up first.", true);
+          return;
+        }
+
+        if (!val) {
+          authMode = "signin";
+          syncAuthModeUi("signin");
+          setAuthFeedback("Enter your registered name and email/username to Sign In.", false);
+          return;
+        }
+
+        var existing = findRegisteredPatient(val);
+        if (!existing) {
+          authMode = "signup";
+          syncAuthModeUi("signup");
+          setAuthFeedback("This email or username has not signed up yet. Please Sign Up first.", true);
+          return;
+        }
+
+        if (enteredName && existing.name.toLowerCase() !== enteredName.toLowerCase()) {
+          authMode = "signup";
+          syncAuthModeUi("signup");
+          setAuthFeedback(
+            "No sign-up found under the name \"" + enteredName + "\" for this account. Please Sign Up with your name first.",
+            true
+          );
+          return;
+        }
+
+        authMode = "signin";
+        syncAuthModeUi("signin");
+        setAuthFeedback("Account found for " + existing.name + ". Enter your password to Sign In.", false);
+      };
+
+      function syncPatientAuthUi() {
+        var session = getCurrentSession();
+        var isLoggedIn = Boolean(session && session.name && session.email);
+        var btn = document.getElementById("btnAuthOpen");
+        var logoutBtn = document.getElementById("btnAuthLogout");
+        var closeBtn = document.querySelector("#authModal .btn-close-rx");
+        var subEl = document.querySelector("#authModal .rx-sub");
+
+        document.body.classList.toggle("auth-locked", !isLoggedIn);
+
+        if (btn) {
+          if (isLoggedIn) {
+            btn.textContent = session.name + " (Patient)";
+          } else {
+            btn.textContent = "Patient Portal Required";
+          }
+        }
+        if (logoutBtn) {
+          logoutBtn.style.display = isLoggedIn ? "block" : "none";
+        }
+        if (closeBtn) {
+          closeBtn.style.display = isLoggedIn ? "inline-flex" : "none";
+        }
+        if (subEl) {
+          subEl.textContent = isLoggedIn
+            ? "Signed in to patient account"
+            : "Sign Up required before Sign In";
+        }
+      }
+
+      window.openAuthModal = function () {
+        var session = getCurrentSession();
+        var isLoggedIn = Boolean(session && session.name && session.email);
+        syncPatientAuthUi();
+
+        if (!isLoggedIn) {
+          var hasAccounts = getRegisteredPatients().length > 0;
+          var emailEl = document.getElementById("authEmail");
+          var currentEmail = emailEl ? emailEl.value.trim() : "";
+
+          if (!hasAccounts) {
+            authMode = "signup";
+            syncAuthModeUi("signup");
+            setAuthFeedback("Sign Up has not been completed yet. Please create a patient account first.", true);
+          } else if (currentEmail && findRegisteredPatient(currentEmail)) {
+            authMode = "signin";
+            syncAuthModeUi("signin");
+            setAuthFeedback("Account found. Enter password to Sign In.", false);
+          } else {
+            authMode = "signup";
+            syncAuthModeUi("signup");
+            setAuthFeedback("Please Sign Up with your name and email/username before signing in.", true);
+          }
+        } else {
+          authMode = "signin";
+          syncAuthModeUi("signin");
+        }
+
+        var modal = document.getElementById("authModal");
+        if (modal) modal.classList.add("open");
+        setTimeout(function () {
+          var target = authMode === "signup"
+            ? document.getElementById("authFullName")
+            : document.getElementById("authEmail");
+          if (target) target.focus();
+        }, 20);
+      };
+
+      window.closeAuthModal = function (event) {
+        var session = getCurrentSession();
+        var isLoggedIn = Boolean(session && session.name && session.email);
+        if (!isLoggedIn) {
+          setAuthFeedback("Please complete Sign Up and Sign In first.", true);
+          return;
+        }
+        if (!event || event.target.id === "authModal") {
+          var modal = document.getElementById("authModal");
+          if (modal) modal.classList.remove("open");
+        }
+      };
+
+      window.logoutCurrentUser = function () {
+        saveCurrentSession(null);
+        var passEl = document.getElementById("authPassword");
+        if (passEl) passEl.value = "";
+        setAuthFeedback("Signed out. Please Sign Up or Sign In.", true);
+        if (typeof setOutput === "function") {
+          setOutput("Patient Auth", "Signed out.");
+        }
+        window.openAuthModal();
+      };
+
+      function requirePatientAuthGuard(actionName) {
+        var session = getCurrentSession();
+        var isLoggedIn = Boolean(session && session.name && session.email);
+        if (!isLoggedIn) {
+          if (typeof setOutput === "function") {
+            setOutput("Patient Auth Required", "Please Sign Up and Sign In before using " + (actionName || "this feature") + ".");
+          }
+          window.openAuthModal();
+          return false;
+        }
+        return true;
+      }
+
+      var guardedFns = [
+        ["addPatientNow", "Add Patient"],
+        ["bookApptNow", "Book Appointment"],
+        ["callNextNow", "Call Next Patient"],
+        ["cancelApptNow", "Cancel Appointment"],
+        ["searchPatientNow", "Search Patient"],
+        ["runAiChatbot", "AI Chatbot"],
+        ["runAiAppointment", "AI Appointment"],
+        ["runAiReportSummary", "AI Report Summary"],
+        ["runAiDoctorAssistant", "AI Doctor Assistant"],
+        ["runAiAnalytics", "AI Analytics"],
+        ["runDsPriorityBook", "Urgent Care"],
+        ["runDsPriorityCall", "Call Urgent"],
+        ["runDsBstLookup", "ID Lookup"],
+        ["runDsHashLookup", "Quick Lookup"],
+        ["runDsSortByAge", "Sort By Age"],
+        ["runDsStackTop", "Recent Action"],
+        ["runDsWardGraph", "Ward Flow"]
+      ];
+
+      guardedFns.forEach(function (pair) {
+        var fnName = pair[0];
+        var label = pair[1];
+        var orig = window[fnName];
+        if (typeof orig === "function") {
+          window[fnName] = function () {
+            if (!requirePatientAuthGuard(label)) return;
+            return orig.apply(this, arguments);
+          };
+        }
+      });
+
+      window.submitAuthForm = function (event) {
+        event.preventDefault();
+        var nameEl = document.getElementById("authFullName");
+        var emailEl = document.getElementById("authEmail");
+        var passEl = document.getElementById("authPassword");
+
+        var fullName = nameEl ? nameEl.value.trim() : "";
+        var email = emailEl ? emailEl.value.trim() : "";
+        var password = passEl ? passEl.value : "";
+
+        if (!email || password.length < 4) {
+          setAuthFeedback("Please enter Email/Username and a Password (at least 4 characters).", true);
+          return;
+        }
+
+        if (!getRegisteredPatients().length && authMode === "signin") {
+          authMode = "signup";
+          syncAuthModeUi("signup");
+          setAuthFeedback("No patient account has signed up yet. Please Sign Up first.", true);
+          if (nameEl) nameEl.focus();
+          return;
+        }
+
+        var existing = findRegisteredPatient(email);
+
+        if (authMode === "signin") {
+          if (!existing) {
+            authMode = "signup";
+            syncAuthModeUi("signup");
+            setAuthFeedback("No sign-up found for this email or username. Please Sign Up first.", true);
+            if (nameEl) nameEl.focus();
+            return;
+          }
+          if (!fullName) {
+            setAuthFeedback("Please enter the registered Patient Full Name to verify Sign In.", true);
+            if (nameEl) nameEl.focus();
+            return;
+          }
+          if (existing.name.toLowerCase() !== fullName.toLowerCase()) {
+            setAuthFeedback(
+              "No sign-up exists under the name \"" + fullName + "\". Enter the exact registered name or Sign Up first.",
+              true
+            );
+            return;
+          }
+          if (existing.password !== password) {
+            setAuthFeedback("Incorrect password. Please try again.", true);
+            return;
+          }
+          saveCurrentSession({ name: existing.name, email: existing.email, role: "Patient" });
+          setAuthFeedback("Signed in as Patient: " + existing.name + ".", false);
+          if (typeof setOutput === "function") {
+            setOutput("Patient Auth", "Signed in as Patient: " + existing.name);
+          }
+          if (passEl) passEl.value = "";
+          setTimeout(function () {
+            var modal = document.getElementById("authModal");
+            if (modal) modal.classList.remove("open");
+          }, 300);
+          return;
+        }
+
+        if (!fullName) {
+          setAuthFeedback("Patient Full Name is required to Sign Up.", true);
+          if (nameEl) nameEl.focus();
+          return;
+        }
+
+        if (existing) {
+          authMode = "signin";
+          syncAuthModeUi("signin");
+          setAuthFeedback(
+            "This email or username is already registered (" + existing.name + "). Switch to Sign In or use a different email/username.",
+            true
+          );
+          if (passEl) passEl.focus();
+          return;
+        }
+
+        var list = getRegisteredPatients();
+        var newPatient = {
+          name: fullName,
+          email: email,
+          password: password,
+          role: "Patient"
+        };
+        list.push(newPatient);
+        saveRegisteredPatients(list);
+        saveCurrentSession(null);
+
+        authMode = "signin";
+        syncAuthModeUi("signin");
+        if (passEl) passEl.value = "";
+        setAuthFeedback(
+          "Sign Up completed for " + fullName + ". Now enter your password and click Sign In as Patient.",
+          false
+        );
+        if (typeof setOutput === "function") {
+          setOutput("Patient Auth", "Sign Up completed for " + fullName + ". Please Sign In to continue.");
+        }
+        if (passEl) passEl.focus();
+      };
+
+      saveCurrentSession(null);
+      window.openAuthModal();
+    })();
   </script>
 
   <script>

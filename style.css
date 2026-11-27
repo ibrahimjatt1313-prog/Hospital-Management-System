@@ -1786,4 +1786,119 @@ body.midnight-theme .desk-note-label {
 body.midnight-theme .desk-note-val {
   color: #7dd3fc;
 }
+/* Sign In / Sign Up Modal */
+.auth-modal-card {
+  max-width: 440px;
+}
 
+.auth-switch-tabs {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 14px;
+}
+
+.auth-switch-tabs .ai-tab-btn {
+  flex: 1;
+  padding: 7px 12px;
+  font-size: 13px;
+}
+
+.auth-form {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.auth-field label {
+  display: block;
+  font-size: 12px;
+  font-weight: 700;
+  margin-bottom: 4px;
+  color: #3b574f;
+}
+
+.auth-field input,
+.auth-field select {
+  width: 100%;
+  height: 36px;
+  border: 1px solid #d5e4de;
+  border-radius: 9px;
+  padding: 0 11px;
+  font-size: 13px;
+  color: #0f2922;
+  background: #fafcfb;
+  outline: none;
+}
+
+.auth-field input:focus,
+.auth-field select:focus {
+  background: #ffffff;
+  border-color: var(--brand-primary);
+  box-shadow: 0 0 0 3px rgba(13, 138, 106, 0.12);
+}
+
+.auth-feedback {
+  min-height: 18px;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.auth-feedback.is-error {
+  color: #dc2626;
+}
+
+.auth-feedback.is-success {
+  color: var(--brand-text);
+}
+
+.auth-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.auth-actions .action-btn {
+  margin-top: 0;
+}
+
+body.dark-theme .auth-field label {
+  color: #8eb5aa;
+}
+
+body.dark-theme .auth-field input,
+body.dark-theme .auth-field select {
+  background: #0b1916;
+  color: #e6f5f0;
+  border-color: #23493f;
+}
+
+body.dark-theme .auth-feedback.is-success {
+  color: #6ee7b7;
+}
+
+body.midnight-theme .auth-field label {
+  color: #93abd6;
+}
+
+body.midnight-theme .auth-field input,
+body.midnight-theme .auth-field select {
+  background: #060a14;
+  color: #ebf2ff;
+  border-color: #1e345e;
+}
+
+body.midnight-theme .auth-feedback.is-success {
+  color: #7dd3fc;
+}
+/* Mandatory Login Lock */
+body.auth-locked .workspace-grid {
+  filter: blur(2px);
+  pointer-events: none;
+  user-select: none;
+}
+
+#authModal.open {
+  display: flex;
+  z-index: 9999;
+}

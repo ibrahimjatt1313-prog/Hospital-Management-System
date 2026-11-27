@@ -1,7 +1,9 @@
+import hashlib
 import logging
 import math
 import os
 import re
+import secrets
 from pathlib import Path
 from typing import Any
 
@@ -53,7 +55,32 @@ class PatientDB(Base):
     visits_summary = Column(Text, default="")
 
 
+class UserDB(Base):
+    __tablename__ = "users"
+    id = Column(Integer, primary_key=True, index=True)
+    name = Column(String(120), nullable=False)
+    email = Column(String(160), unique=True, index=True, nullable=False)
+    role = Column(String(60), default="Receptionist")
+    password_hash = Column(String(256), nullable=False)
+
+
 Base.metadata.create_all(bind=engine)
+
+
+def _hash_password(password: str) -> str:
+    salt = secrets.token_hex(16)
+    digest = hashlib.pbkdf2_hmac("sha256", password.encode("utf-8"), salt.encode("utf-8"), 120_000).hex()
+    return f"{salt}${digest}"
+
+
+def _verify_password(password: str, stored_hash: str) -> bool:
+    try:
+        salt, digest = stored_hash.split("$", 1)
+        computed = hashlib.pbkdf2_hmac("sha256", password.encode("utf-8"), salt.encode("utf-8"), 120_000).hex()
+        return secrets.compare_digest(computed, digest)
+    except Exception:
+        return False
+
 
 hs = HospitalSystem()
 patient_meta: dict[int, dict[str, str]] = {}
@@ -290,6 +317,18 @@ def _snapshot(status_msg: str | None = None) -> dict[str, Any]:
     return payload
 
 
+class SignUpReq(BaseModel):
+    name: str = Field(..., min_length=1)
+    email: str = Field(..., min_length=2)
+    password: str = Field(..., min_length=4)
+    role: str = "Receptionist"
+
+
+class LoginReq(BaseModel):
+    email: str = Field(..., min_length=1)
+    password: str = Field(..., min_length=1)
+
+
 class AddPatientReq(BaseModel):
     id: int
     name: str
@@ -356,6 +395,43 @@ def serve_static_file(file_name: str):
     if file_name in allowed and target.exists():
         return FileResponse(target)
     return JSONResponse({"error": "Not found"}, status_code=404)
+
+
+@app.post("/api/auth/signup")
+def api_auth_signup(req: SignUpReq):
+    clean_email = req.email.strip().lower()
+    clean_name = req.name.strip()
+    clean_role = req.role.strip() or "Receptionist"
+    with SessionLocal() as db:
+        existing = db.scalar(select(UserDB).where(UserDB.email == clean_email))
+        if existing:
+            return JSONResponse({"detail": "Account with this email/username already exists."}, status_code=400)
+        user = UserDB(
+            name=clean_name,
+            email=clean_email,
+            role=clean_role,
+            password_hash=_hash_password(req.password),
+        )
+        db.add(user)
+        db.commit()
+        db.refresh(user)
+        return {
+            "message": f"Account created for {user.name}.",
+            "user": {"id": user.id, "name": user.name, "email": user.email, "role": user.role},
+        }
+
+
+@app.post("/api/auth/login")
+def api_auth_login(req: LoginReq):
+    clean_email = req.email.strip().lower()
+    with SessionLocal() as db:
+        user = db.scalar(select(UserDB).where(UserDB.email == clean_email))
+        if not user or not _verify_password(req.password, user.password_hash):
+            return JSONResponse({"detail": "Invalid email/username or password."}, status_code=401)
+        return {
+            "message": f"Welcome back, {user.name}.",
+            "user": {"id": user.id, "name": user.name, "email": user.email, "role": user.role},
+        }
 
 
 @app.get("/api/state")
@@ -504,6 +580,8 @@ def api_ds_stack_top():
     if stack is None:
         return JSONResponse({"error": "Action stack not initialized"}, status_code=400)
     return {"is_empty": stack.is_empty(), "top_action": stack.top_value()}
+
+
 @app.get("/api/ds/hash-lookup/{patient_id}")
 def api_ds_hash_lookup(patient_id: int):
     ht = getattr(hs, "hash_index", None)
@@ -527,6 +605,7 @@ def api_ds_ward_route(start_ward: str):
         "bfs_order": wg.bfs(start_ward),
         "dfs_order": wg.dfs(start_ward),
     }
+
 
 @app.post("/api/ai/chatbot")
 def ai_chatbot(req: ChatbotReq):
