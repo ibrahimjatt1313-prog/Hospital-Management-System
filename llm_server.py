@@ -38,53 +38,6 @@ engine = create_engine(DATABASE_URL, pool_pre_ping=True, connect_args=connect_ar
 SessionLocal = sessionmaker(bind=engine, autoflush=False, autocommit=False)
 Base = declarative_base()
 
-class AuthRegisterReq(BaseModel):
-    name: str = Field(..., min_length=1)
-    identifier: str = Field(..., min_length=1)
-    password: str = Field(..., min_length=6)
-
-
-class AuthLoginReq(BaseModel):
-    identifier: str = Field(..., min_length=1)
-    password: str = Field(..., min_length=1)
-
-
-AUTH_USERS_STORE: dict[str, dict[str, str]] = {
-    "admin@hms.local": {
-        "name": "HMS Administrator",
-        "identifier": "admin@hms.local",
-        "password": "password123",
-    }
-}
-
-
-@app.post("/api/auth/register")
-def api_auth_register(req: AuthRegisterReq):
-    key = req.identifier.strip().lower()
-    if key in AUTH_USERS_STORE:
-        return JSONResponse({"error": "Account already exists"}, status_code=400)
-    AUTH_USERS_STORE[key] = {
-        "name": req.name.strip(),
-        "identifier": req.identifier.strip(),
-        "password": req.password,
-    }
-    return {
-        "authenticated": True,
-        "user": {"name": req.name.strip(), "identifier": req.identifier.strip()},
-    }
-
-
-@app.post("/api/auth/login")
-def api_auth_login(req: AuthLoginReq):
-    key = req.identifier.strip().lower()
-    user = AUTH_USERS_STORE.get(key)
-    if not user or user["password"] != req.password:
-        return JSONResponse({"error": "Invalid credentials"}, status_code=401)
-    return {
-        "authenticated": True,
-        "user": {"name": user["name"], "identifier": user["identifier"]},
-    }
-
 
 class PatientDB(Base):
     __tablename__ = "patients"
